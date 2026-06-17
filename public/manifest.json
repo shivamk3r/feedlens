@@ -1,10 +1,10 @@
 {
   "manifest_version": 3,
-  "name": "Feed Lens",
+  "name": "FeedLens",
   "version": "0.1.0",
   "description": "Privacy-first information-quality and manipulation-risk signals for visible LinkedIn feed posts.",
   "action": {
-    "default_title": "Feed Lens",
+    "default_title": "FeedLens",
     "default_popup": "popup.html"
   },
   "background": {

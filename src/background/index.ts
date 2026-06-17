@@ -66,5 +66,5 @@ async function handleMessage(message: BackgroundMessage): Promise<unknown> {
 }
 
 function exhaustive(value: never): never {
-  throw new Error(`Unsupported Feed Lens message: ${JSON.stringify(value)}`);
+  throw new Error(`Unsupported FeedLens message: ${JSON.stringify(value)}`);
 }

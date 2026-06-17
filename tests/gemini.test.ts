@@ -62,7 +62,7 @@ describe("Gemini analysis service", () => {
     expect(body.contents[0].parts[0].text).toContain("Analyze this visible LinkedIn post");
   });
 
-  it("maps Gemini rate limits to a retryable Feed Lens error", async () => {
+  it("maps Gemini rate limits to a retryable FeedLens error", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async () =>
@@ -108,7 +108,7 @@ describe("Gemini analysis service", () => {
     expect(String(url)).toContain("/models/gemini-3.5-flash:generateContent");
     expect(String(url)).not.toContain("candidate-key");
     expect((init as RequestInit).headers).toMatchObject({ "x-goog-api-key": "candidate-key" });
-    expect(String((init as RequestInit).body)).toContain("Feed Lens connection check");
+    expect(String((init as RequestInit).body)).toContain("FeedLens connection check");
   });
 
   it("returns a sanitized failure when a Gemini key cannot be used", async () => {

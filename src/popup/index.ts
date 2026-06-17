@@ -30,7 +30,7 @@ async function render(state: PopupState = {}): Promise<void> {
   root.innerHTML = `
     <header class="fl-topbar">
       <div class="fl-brand">
-        <div class="fl-brand__name">Feed Lens</div>
+        <div class="fl-brand__name">FeedLens</div>
         <div class="fl-brand__tagline">${configured ? "Ready on LinkedIn" : "Setup needed"}</div>
       </div>
       <span class="${configured ? "fl-badge fl-badge--green" : "fl-badge fl-badge--yellow"}">
@@ -42,12 +42,12 @@ async function render(state: PopupState = {}): Promise<void> {
       ${
         configured
           ? ""
-          : `<div class="fl-warning">Add your Gemini API key and accept the privacy notice before Feed Lens analyzes visible posts.</div>`
+          : `<div class="fl-warning">Add your Gemini API key and accept the privacy notice before FeedLens analyzes visible posts.</div>`
       }
       ${
         linkedInOpen
           ? renderPageState(page)
-          : `<div class="fl-card"><h2>LinkedIn tab not detected</h2><p>Open your LinkedIn feed, then use Feed Lens from that tab.</p></div>`
+          : `<div class="fl-card"><h2>LinkedIn tab not detected</h2><p>Open your LinkedIn feed, then use FeedLens from that tab.</p></div>`
       }
       <div class="fl-card">
         <h2>Controls</h2>
@@ -116,7 +116,7 @@ function bindActions(status: SetupStatus, page?: ContentState): void {
     }).catch(() => page);
     await render({
       page: updatedPage,
-      notice: nextEnabled ? "Feed Lens is paused for this tab." : "Feed Lens resumed."
+      notice: nextEnabled ? "FeedLens is paused for this tab." : "FeedLens resumed."
     });
   });
 
@@ -131,7 +131,7 @@ function bindActions(status: SetupStatus, page?: ContentState): void {
     const updatedPage = await sendActiveTabMessage<ContentState>({
       type: "feedlens-content:clearVisibleResults"
     }).catch(() => page);
-    await render({ page: updatedPage, notice: "Visible Feed Lens markers were cleared." });
+    await render({ page: updatedPage, notice: "Visible FeedLens markers were cleared." });
   });
 }
 

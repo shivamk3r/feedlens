@@ -39,16 +39,16 @@ CLAUDE.md -> AGENTS.md
 2. Open `chrome://extensions`.
 3. Enable Developer mode.
 4. Load unpacked extension from `dist/`.
-5. Open Feed Lens settings.
+5. Open FeedLens settings.
 6. Enter a Gemini API key.
 7. Accept the privacy notice.
 8. Open `https://www.linkedin.com/feed/`.
-9. Open the Feed Lens popup and click Analyze visible.
+9. Open the FeedLens popup and click Analyze visible.
 10. Confirm visible posts receive calm green/yellow/red markers.
 11. Click a marker and confirm the inline detail opens.
 12. Open the side panel and confirm session results appear.
 13. Test copy, hide, useful/not useful, and re-analyze.
-14. Pause Feed Lens from the popup and confirm no new automatic analysis runs.
+14. Pause FeedLens from the popup and confirm no new automatic analysis runs.
 15. Clear markers from the popup.
 
 ## Privacy/Security Manual Checks

@@ -31,7 +31,7 @@ export function renderMarker({ host, result, source, settings, onSelect }: Rende
   button.type = "button";
   button.className = "feedlens-marker__button";
   button.setAttribute("aria-expanded", "false");
-  button.textContent = `Feed Lens: ${labelForMarker(result.marker)}`;
+  button.textContent = `FeedLens: ${labelForMarker(result.marker)}`;
 
   const meta = document.createElement("span");
   meta.className = "feedlens-marker__meta";
@@ -55,7 +55,7 @@ export function renderPending(host: HTMLElement): void {
   clearMarker(host);
   const marker = document.createElement("div");
   marker.className = "feedlens-marker feedlens-marker--pending";
-  marker.innerHTML = `<span class="feedlens-marker__button feedlens-marker__button--static">Feed Lens: Analyzing</span>`;
+  marker.innerHTML = `<span class="feedlens-marker__button feedlens-marker__button--static">FeedLens: Analyzing</span>`;
   host.prepend(marker);
 }
 

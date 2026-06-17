@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This repository builds **Feed Lens**, a privacy-first Chrome extension for scoring and surfacing manipulation-risk and information-quality signals on LinkedIn posts.
+This repository builds **FeedLens**, a privacy-first Chrome extension for scoring and surfacing manipulation-risk and information-quality signals on LinkedIn posts.
 
 ## First-Version Product Scope
 

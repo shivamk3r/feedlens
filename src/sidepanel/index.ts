@@ -35,7 +35,7 @@ async function render(notice?: string): Promise<void> {
   root.innerHTML = `
     <header class="fl-topbar">
       <div class="fl-brand">
-        <div class="fl-brand__name">Feed Lens Details</div>
+        <div class="fl-brand__name">FeedLens Details</div>
         <div class="fl-brand__tagline">${results.length ? `${results.length} session result${results.length === 1 ? "" : "s"}` : "No results yet"}</div>
       </div>
       <button class="fl-button" id="refresh-panel"><i data-lucide="refresh-ccw"></i>Refresh</button>
@@ -45,7 +45,7 @@ async function render(notice?: string): Promise<void> {
       ${
         results.length
           ? results.map((result) => renderResult(result, status.selectedHash)).join("")
-          : `<div class="fl-card"><h2>No analyzed posts</h2><p>Open LinkedIn and run Feed Lens on visible feed posts.</p></div>`
+          : `<div class="fl-card"><h2>No analyzed posts</h2><p>Open LinkedIn and run FeedLens on visible feed posts.</p></div>`
       }
     </section>
   `;

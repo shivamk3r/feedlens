@@ -1,4 +1,4 @@
-export const PROMPT_VERSION = "feed-lens-v1";
+export const PROMPT_VERSION = "feedlens-v1";
 
 export type Marker = "green" | "yellow" | "red";
 export type Confidence = "low" | "medium" | "high";

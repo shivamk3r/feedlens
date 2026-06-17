@@ -3,7 +3,7 @@ import type { FeedLensSettings } from "./types";
 
 const geminiResponseSchema = stripUnsupportedGeminiSchema(analysisResponseSchema);
 
-export const SYSTEM_PROMPT = `You are Feed Lens, a careful assistant that analyzes LinkedIn post text for information quality, misinformation risk, and manipulation or persuasion signals.
+export const SYSTEM_PROMPT = `You are FeedLens, a careful assistant that analyzes LinkedIn post text for information quality, misinformation risk, and manipulation or persuasion signals.
 
 Rules:
 - Analyze only the supplied post text.
@@ -16,7 +16,7 @@ Rules:
 - Return only JSON that matches the provided schema.`;
 
 export function buildUserPrompt(postText: string, settings: FeedLensSettings): string {
-  return `Analyze this visible LinkedIn post for Feed Lens.
+  return `Analyze this visible LinkedIn post for FeedLens.
 
 Analysis depth: ${settings.analysisDepth}
 Sensitivity: ${settings.sensitivity}

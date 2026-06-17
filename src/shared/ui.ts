@@ -27,7 +27,7 @@ export function analysisToText(result: SessionResult): string {
     .join("\n");
 
   return [
-    `Feed Lens: ${markerLabel(result.result.marker)}`,
+    `FeedLens: ${markerLabel(result.result.marker)}`,
     `Confidence: ${result.result.confidence}`,
     `Information Quality: ${result.result.information_quality_score}`,
     `Misinformation Risk: ${result.result.misinformation_risk_score}`,

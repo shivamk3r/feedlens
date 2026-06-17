@@ -1,5 +1,5 @@
 {
-  "name": "feed-lens",
+  "name": "feedlens",
   "version": "0.1.0",
   "private": true,
   "description": "Privacy-first Chrome extension for LinkedIn information-quality and manipulation-risk signals.",

@@ -1,26 +1,26 @@
-# Feed Lens Product Specification
+# FeedLens Product Specification
 
 ## 1. Product Overview
 
 ### Product Name
 
-Fixed name: **Feed Lens**
+Fixed name: **FeedLens**
 
 ### One-Line Description
 
-Feed Lens is a privacy-first Chrome extension that works quietly behind the scenes to help users identify misinformation risk, manipulation, engagement-bait, psychological pressure, and high-quality information in LinkedIn feed posts using their own Gemini API key.
+FeedLens is a privacy-first Chrome extension that works quietly behind the scenes to help users identify misinformation risk, manipulation, engagement-bait, psychological pressure, and high-quality information in LinkedIn feed posts using their own Gemini API key.
 
 ### Product Summary
 
-Feed Lens analyzes posts visible in a user's LinkedIn feed and overlays subtle, color-coded guidance directly on the feed. Posts with high-quality information are marked green, ambiguous or mixed-quality posts are marked yellow, and posts with strong misinformation risk or manipulative pressure are marked red.
+FeedLens analyzes posts visible in a user's LinkedIn feed and overlays subtle, color-coded guidance directly on the feed. Posts with high-quality information are marked green, ambiguous or mixed-quality posts are marked yellow, and posts with strong misinformation risk or manipulative pressure are marked red.
 
 The extension does not require a user account, does not operate a backend server, does not store LinkedIn feed data, and does not pay for LLM usage. In the first version, users bring their own Gemini API key. Future versions may add other model providers or local model support, but they are out of scope for the initial implementation.
 
-The product is not intended to censor content, block posts, or label people as manipulative. It helps users navigate their digital life with more awareness by making it clear when a post appears informative, uncertain, unsupported, emotionally pressuring, or potentially manipulative. Users can still consume any content they want, but Feed Lens helps them notice what kind of content they are consuming.
+The product is not intended to censor content, block posts, or label people as manipulative. It helps users navigate their digital life with more awareness by making it clear when a post appears informative, uncertain, unsupported, emotionally pressuring, or potentially manipulative. Users can still consume any content they want, but FeedLens helps them notice what kind of content they are consuming.
 
 ### Recommended Positioning
 
-Feed Lens should be positioned as:
+FeedLens should be positioned as:
 
 ```text
 A privacy-first digital information lens for LinkedIn.
@@ -37,7 +37,7 @@ A tool that labels posts as propaganda.
 Recommended public copy:
 
 ```text
-Feed Lens helps you understand the quality and persuasive pressure of the information you consume on LinkedIn.
+FeedLens helps you understand the quality and persuasive pressure of the information you consume on LinkedIn.
 
 It subtly marks posts as green, yellow, or red based on signals like evidence quality, misinformation risk, urgency, fear framing, vague authority, social proof pressure, and engagement bait. It uses your own Gemini API key, and your feed does not pass through our servers.
 ```
@@ -71,11 +71,11 @@ Users need a lightweight tool that helps them move through their digital life wi
 ### Secondary Users
 
 1. **Teams and organizations**
-   - Could use Feed Lens later for media literacy training.
+   - Could use FeedLens later for media literacy training.
    - Not part of the MVP.
 
 2. **Educators**
-   - Could use Feed Lens to teach critical thinking.
+   - Could use FeedLens to teach critical thinking.
    - Not part of the MVP.
 
 ## 4. Product Principles
@@ -158,7 +158,7 @@ The MVP will not:
 4. User accepts the privacy notice:
 
 ```text
-Visible posts are analyzed using Gemini with your API key. Feed Lens does not operate a backend and does not store your data.
+Visible posts are analyzed using Gemini with your API key. FeedLens does not operate a backend and does not store your data.
 ```
 
 5. User opens the LinkedIn feed.
@@ -189,7 +189,7 @@ Visible posts are analyzed using Gemini with your API key. Feed Lens does not op
 ### Example Output
 
 ```text
-Feed Lens: Red
+FeedLens: Red
 
 Information Quality: Low
 Misinformation Risk: High
@@ -212,7 +212,7 @@ Confidence: Medium
 
 ### Chrome Extension
 
-Feed Lens will be delivered as a Chrome extension using Manifest V3.
+FeedLens will be delivered as a Chrome extension using Manifest V3.
 
 Required components:
 
@@ -275,7 +275,7 @@ The extension may process:
 1. Visible LinkedIn post text.
 2. Post author display name, if needed for UI context.
 3. Public engagement text visible in the post, if needed.
-4. Feed Lens Gemini runtime settings.
+4. FeedLens Gemini runtime settings.
 5. User's Gemini API key.
 6. Local analysis cache.
 
@@ -293,7 +293,7 @@ The product creator will not collect:
 
 ### Key Storage
 
-The Gemini API key is stored locally in Chrome extension storage on the user's device. Feed Lens does not collect the key or send it to a creator-controlled backend.
+The Gemini API key is stored locally in Chrome extension storage on the user's device. FeedLens does not collect the key or send it to a creator-controlled backend.
 
 ### Local Testing Key
 
@@ -310,14 +310,14 @@ The `.env` file must remain local and must not be committed. Do not print or log
 Suggested user-facing copy:
 
 ```text
-Feed Lens analyzes visible LinkedIn posts using Gemini with the API key you configure.
+FeedLens analyzes visible LinkedIn posts using Gemini with the API key you configure.
 
 We do not run a backend server.
 We do not store your LinkedIn feed.
 We do not collect your API key.
 We do not sell or share your data.
 
-When Feed Lens analyzes a visible post, the post text may be sent directly from your browser to the Gemini API. Your use of Gemini is subject to Google's privacy policy and billing terms.
+When FeedLens analyzes a visible post, the post text may be sent directly from your browser to the Gemini API. Your use of Gemini is subject to Google's privacy policy and billing terms.
 ```
 
 ## 10. LLM Provider Support
@@ -341,12 +341,12 @@ The first customer-facing version should keep setup simple:
 
 1. Users configure only their Gemini API key.
 2. Users accept the privacy notice before analysis runs.
-3. Feed Lens uses the fixed Gemini model `gemini-3.5-flash`.
+3. FeedLens uses the fixed Gemini model `gemini-3.5-flash`.
 4. Model tuning, analysis depth, sensitivity, storage mode, and cache behavior are internal defaults, not user-facing settings.
 
 ## 11. Classification and Scoring System
 
-The product should avoid presenting any label as objective truth. Feed Lens should frame its output as an information-quality and manipulation-risk assessment, not as a definitive ruling about truth, intent, or character.
+The product should avoid presenting any label as objective truth. FeedLens should frame its output as an information-quality and manipulation-risk assessment, not as a definitive ruling about truth, intent, or character.
 
 ### Feed Marker Labels
 
@@ -543,9 +543,9 @@ Post text:
 Each analyzed post should receive a subtle marker. The visual treatment should be noticeable enough to guide attention but calm enough that it does not shame the author or make the feed feel hostile.
 
 ```text
-Feed Lens: Green
-Feed Lens: Yellow
-Feed Lens: Red
+FeedLens: Green
+FeedLens: Yellow
+FeedLens: Red
 ```
 
 On click, the marker should show details.
@@ -884,7 +884,7 @@ LinkedIn's page structure may change. The extension should be tested regularly a
 ## 24. Open Questions
 
 1. How subtle should the default green, yellow, and red visual treatment be?
-2. Should Feed Lens default to feed highlights, marker-only mode, or side-panel-only mode?
+2. Should FeedLens default to feed highlights, marker-only mode, or side-panel-only mode?
 3. Should the product be open source from day one?
 4. Which provider should be added after Gemini, if any?
 5. Should the first version be LinkedIn-only or generic text-selection based?

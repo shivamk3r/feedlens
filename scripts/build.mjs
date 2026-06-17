@@ -69,4 +69,4 @@ await Promise.all([
   copyFile(path.join(root, "src/styles/feedlens.css"), path.join(assetDir, "feedlens.css"))
 ]);
 
-console.log(`Built Feed Lens extension into ${path.relative(root, distDir)}`);
+console.log(`Built FeedLens extension into ${path.relative(root, distDir)}`);

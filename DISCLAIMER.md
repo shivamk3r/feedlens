@@ -1,26 +1,26 @@
 # Disclaimer
 
-Feed Lens is an open-source developer beta for local testing. It is not published on the Chrome Web Store and is not intended to imply production distribution readiness.
+FeedLens is an open-source developer beta for local testing. It is not published on the Chrome Web Store and is not intended to imply production distribution readiness.
 
 ## No Affiliation
 
-Feed Lens is not affiliated with, endorsed by, sponsored by, or approved by LinkedIn, Google, Gemini, Chrome, or the Chrome Web Store.
+FeedLens is not affiliated with, endorsed by, sponsored by, or approved by LinkedIn, Google, Gemini, Chrome, or the Chrome Web Store.
 
 LinkedIn, Google, Gemini, Chrome, and related names are trademarks or services of their respective owners.
 
 ## Platform Terms and Account Risk
 
-Feed Lens currently analyzes visible LinkedIn feed posts and adds local browser UI markers while the user browses LinkedIn. Users should review LinkedIn's terms and policies before installing or using the extension.
+FeedLens currently analyzes visible LinkedIn feed posts and adds local browser UI markers while the user browses LinkedIn. Users should review LinkedIn's terms and policies before installing or using the extension.
 
 LinkedIn may object to browser extensions that read LinkedIn page content, modify the appearance of LinkedIn pages, or otherwise interact with LinkedIn's website. LinkedIn may change its site, block or break extensions, restrict accounts, or take other action under its policies.
 
-Use Feed Lens at your own discretion and risk.
+Use FeedLens at your own discretion and risk.
 
 ## Model Output Limitations
 
-Feed Lens outputs are model-based information-quality and manipulation-risk signals. They are not definitive fact-checks, legal conclusions, psychological conclusions, moderation decisions, or claims about an author's intent.
+FeedLens outputs are model-based information-quality and manipulation-risk signals. They are not definitive fact-checks, legal conclusions, psychological conclusions, moderation decisions, or claims about an author's intent.
 
-Users should treat Feed Lens results as reading aids and should apply their own judgment before relying on any analysis.
+Users should treat FeedLens results as reading aids and should apply their own judgment before relying on any analysis.
 
 ## Local Developer Beta
 

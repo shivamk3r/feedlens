@@ -66,7 +66,7 @@ const UI_TEXT = new Set([
   "permalink",
   "view profile",
   "activate to view larger image",
-  "feed lens"
+  "feedlens"
 ]);
 
 export interface ExtractVisiblePostsOptions {

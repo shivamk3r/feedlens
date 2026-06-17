@@ -19,7 +19,7 @@ import {
 
 const GEMINI_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models";
 const VALIDATION_POST_TEXT =
-  "Feed Lens connection check: A team shared a neutral project update with two specific results and no urgent claim.";
+  "FeedLens connection check: A team shared a neutral project update with two specific results and no urgent claim.";
 
 interface GeminiGenerateContentResponse {
   candidates?: Array<{

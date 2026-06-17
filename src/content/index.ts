@@ -92,7 +92,7 @@ function handleContentMessage(
         exhaustive(message);
     }
   })().catch((error: unknown) => {
-    lastError = error instanceof Error ? error.message : "Feed Lens hit an unexpected content error.";
+    lastError = error instanceof Error ? error.message : "FeedLens hit an unexpected content error.";
     sendResponse(getContentState());
   });
 
@@ -250,7 +250,7 @@ function sendBackgroundMessage<T = unknown>(message: BackgroundMessage): Promise
 }
 
 function exhaustive(value: never): never {
-  throw new Error(`Unsupported Feed Lens content message: ${JSON.stringify(value)}`);
+  throw new Error(`Unsupported FeedLens content message: ${JSON.stringify(value)}`);
 }
 
 export {};

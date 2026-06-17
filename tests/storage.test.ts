@@ -106,7 +106,7 @@ describe("extension storage helpers", () => {
       result,
       createdAt: new Date().toISOString(),
       model: DEFAULT_SETTINGS.model,
-      promptVersion: "feed-lens-v1"
+      promptVersion: "feedlens-v1"
     });
 
     expect(await getCacheEntryCount()).toBe(1);

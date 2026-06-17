@@ -1,15 +1,15 @@
-# Feed Lens Architecture
+# FeedLens Architecture
 
 ## Runtime Components
 
-Feed Lens is a Manifest V3 Chrome extension with four runtime surfaces:
+FeedLens is a Manifest V3 Chrome extension with four runtime surfaces:
 
 1. **Content script**
    - Runs only on `https://www.linkedin.com/*`.
    - Detects visible LinkedIn post-like containers.
    - Extracts human-visible post text and removes common LinkedIn UI controls.
    - Hashes post text locally to deduplicate visible posts.
-   - Renders inline Feed Lens markers and detail popovers.
+   - Renders inline FeedLens markers and detail popovers.
    - Sends analysis requests to the background service worker.
    - Never reads or receives the Gemini API key.
 
@@ -65,7 +65,7 @@ The background service worker calls:
 POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent
 ```
 
-The API key is sent with the `x-goog-api-key` header, not in the URL. The request uses Gemini structured JSON output with the Feed Lens schema and the fixed `gemini-3.5-flash` model.
+The API key is sent with the `x-goog-api-key` header, not in the URL. The request uses Gemini structured JSON output with the FeedLens schema and the fixed `gemini-3.5-flash` model.
 
 ## Scoring Contract
 

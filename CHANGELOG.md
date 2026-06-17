@@ -2,7 +2,7 @@
 
 ## v0.1.0 - MVP Release
 
-Feed Lens v0.1.0 is the first loadable developer-beta release of the privacy-first Chrome extension for LinkedIn feed analysis.
+FeedLens v0.1.0 is the first loadable developer-beta release of the privacy-first Chrome extension for LinkedIn feed analysis.
 
 ### Added
 
