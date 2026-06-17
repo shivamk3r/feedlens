@@ -1,12 +1,14 @@
 # Feed Lens
 
-Feed Lens is a privacy-first Chrome extension for surfacing information-quality and manipulation-risk signals on visible LinkedIn feed posts.
+Feed Lens is an open-source, privacy-first Chrome extension developer beta for surfacing information-quality and manipulation-risk signals on visible LinkedIn feed posts.
 
 The MVP is Gemini-only. Users bring their own Gemini API key, and Feed Lens does not run a backend server or store LinkedIn feed data on creator-controlled infrastructure.
 
 ## Current Status
 
-This repository now contains a loadable Manifest V3 Chrome extension with:
+This repository contains a loadable Manifest V3 Chrome extension for local developer testing. Feed Lens is not published on the Chrome Web Store and is not affiliated with, endorsed by, or approved by LinkedIn, Google, Gemini, Chrome, or the Chrome Web Store.
+
+The current developer beta includes:
 
 - LinkedIn content script for visible-post detection, hashing, and inline markers.
 - Background service worker that owns Gemini calls and never exposes API keys to page scripts.
@@ -15,6 +17,8 @@ This repository now contains a loadable Manifest V3 Chrome extension with:
 - Side panel for session-local analysis details, scores, signals, copy, hide, feedback, and re-analysis.
 - Local-only analysis cache and session-only result list.
 - TypeScript build, typecheck, and test tooling.
+
+Before installing or using Feed Lens, review the [privacy policy](PRIVACY.md) and [disclaimer](DISCLAIMER.md), including the LinkedIn platform-risk notes.
 
 ## Local Development
 
@@ -36,13 +40,14 @@ Build the extension:
 npm run build
 ```
 
-Load `dist/` in Chrome:
+Load `dist/` in Chrome for local developer testing:
 
 1. Open `chrome://extensions`.
 2. Enable Developer mode.
 3. Choose Load unpacked.
 4. Select this repository's `dist/` directory.
 5. Open the Feed Lens options page and enter your Gemini API key.
+6. Accept the in-extension privacy notice before analyzing visible posts.
 
 For local test tooling only, copy `.env-example` to `.env` and set `GEMINI_API_KEY`. Do not commit `.env`, print real keys, or bundle `.env` values into extension assets.
 
@@ -51,12 +56,19 @@ For local test tooling only, copy `.env-example` to `.env` and set `GEMINI_API_K
 - [Product specification](docs/product-specification.md)
 - [Architecture](docs/architecture.md)
 - [Testing and release checklist](docs/testing.md)
+- [Privacy policy](PRIVACY.md)
+- [Disclaimer](DISCLAIMER.md)
+- [MIT license](LICENSE)
 
 ## Privacy Boundaries
 
 - Gemini is the only implemented provider.
 - Content scripts never read API keys.
 - Feed Lens sends visible post text directly from the user's browser to Gemini only after setup and privacy acceptance.
-- Local cache stores analysis results, not raw post text.
+- Local cache stores analysis results, not full raw feed history. Analysis output may include short evidence quotes from visible post text.
 - Session results may include a short post snippet for the side panel and are stored in `chrome.storage.session`.
 - No analytics, backend server, or creator-side data collection is implemented.
+
+## Platform Notice
+
+Feed Lens currently analyzes visible LinkedIn feed posts and adds local browser UI markers. LinkedIn may object to browser extensions that read LinkedIn page content, modify the appearance of LinkedIn pages, or interact with its website. Users should review LinkedIn's terms and policies before using Feed Lens.

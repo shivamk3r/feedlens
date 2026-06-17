@@ -33,7 +33,7 @@ The symlink check should continue to show tool adapters pointing at shared `.age
 CLAUDE.md -> AGENTS.md
 ```
 
-## Manual Chrome Extension Test
+## Manual Local Developer Beta Test
 
 1. Run `npm run build`.
 2. Open `chrome://extensions`.
@@ -55,6 +55,7 @@ CLAUDE.md -> AGENTS.md
 
 - Do not inspect or print `.env`.
 - Confirm `dist/` does not contain `GEMINI_API_KEY` values.
+- Confirm `README.md`, `PRIVACY.md`, and `DISCLAIMER.md` frame installation as local developer testing, not Chrome Web Store publication.
 - Confirm content script requests analysis through the background worker.
 - Confirm content script code does not read `chrome.storage` keys directly.
 - Confirm local cache entries are keyed by hash/model/prompt version and do not store full raw post text.

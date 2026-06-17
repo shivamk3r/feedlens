@@ -18,7 +18,7 @@
     "gemini",
     "privacy"
   ],
-  "license": "UNLICENSED",
+  "license": "MIT",
   "devDependencies": {
     "@types/chrome": "^0.0.326",
     "@types/node": "^24.10.1",
