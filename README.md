@@ -20,6 +20,26 @@ The current developer beta includes:
 
 Before installing or using FeedLens, review the [privacy policy](PRIVACY.md) and [disclaimer](DISCLAIMER.md), including the LinkedIn platform-risk notes.
 
+## Getting Started
+
+FeedLens release ZIPs are intended for local developer-beta testing with Chrome's unpacked-extension workflow. FeedLens is not distributed through the Chrome Web Store.
+
+Install from a release ZIP:
+
+1. Review the [privacy policy](PRIVACY.md) and [disclaimer](DISCLAIMER.md).
+2. Open the [FeedLens releases page](https://github.com/shivamk3r/feedlens/releases).
+3. Download the latest FeedLens extension ZIP from the release assets.
+4. Unzip the archive.
+5. Open `chrome://extensions`.
+6. Enable Developer mode.
+7. Choose Load unpacked.
+8. Select the extracted extension folder. If the ZIP extracts to a folder that contains `dist/`, select that `dist/` folder.
+9. Open the FeedLens options page.
+10. Enter your Gemini API key and accept the in-extension privacy notice.
+11. Open `https://www.linkedin.com/feed/` and use the FeedLens popup to analyze visible posts.
+
+Release ZIP installs do not require `npm install`, `.env`, or a local build. Unpacked extensions do not update automatically; repeat the release ZIP steps when you want to test a newer version.
+
 ## Local Development
 
 Install dependencies:
