@@ -12,8 +12,8 @@ describe("hashing", () => {
 
   it("includes model and prompt version in cache keys", async () => {
     const text = "A useful LinkedIn post with enough text to hash.";
-    const first = await createCacheKey(text, "gemini-2.5-flash", PROMPT_VERSION);
-    const second = await createCacheKey(text, "gemini-2.5-pro", PROMPT_VERSION);
+    const first = await createCacheKey(text, "model-a", PROMPT_VERSION);
+    const second = await createCacheKey(text, "model-b", PROMPT_VERSION);
     expect(first).not.toEqual(second);
   });
 });

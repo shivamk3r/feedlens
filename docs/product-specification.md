@@ -127,7 +127,7 @@ Users need a lightweight tool that helps them move through their digital life wi
 
 1. Support multiple social platforms.
 2. Support additional model providers and local models.
-3. Provide personalized sensitivity settings.
+3. Improve scoring calibration over time.
 4. Provide media literacy education.
 5. Allow users to compare different styles of persuasion, manipulation, and misinformation.
 6. Create an open-source rules and LLM hybrid classifier.
@@ -154,22 +154,17 @@ The MVP will not:
 
 1. User installs the Chrome extension.
 2. User opens the extension settings page.
-3. User confirms Gemini as the model provider.
-4. User enters their Gemini API key.
-5. User chooses storage mode:
-   - Session-only storage: key is cleared when the browser closes.
-   - Local storage: key persists on the user's device.
-   - Local proxy mode is deferred until a later version.
-6. User accepts the privacy notice:
+3. User enters their Gemini API key.
+4. User accepts the privacy notice:
 
 ```text
 Visible posts are analyzed using Gemini with your API key. Feed Lens does not operate a backend and does not store your data.
 ```
 
-7. User opens the LinkedIn feed.
-8. Extension starts analyzing visible posts in the background.
-9. Extension marks posts with subtle green, yellow, or red treatment.
-10. User can pause background analysis or switch to manual analysis from the popup.
+5. User opens the LinkedIn feed.
+6. Extension starts analyzing visible posts in the background.
+7. Extension marks posts with subtle green, yellow, or red treatment.
+8. User can pause background analysis or switch to manual analysis from the popup.
 
 ### Normal Usage
 
@@ -243,9 +238,8 @@ Required components:
 
 4. **Options/settings page**
    - Gemini API key input.
-   - Model selection.
-   - Privacy controls.
-   - Cache controls.
+   - Privacy notice acceptance.
+   - Clear key action.
 
 5. **Optional side panel**
    - Displays analysis for selected posts.
@@ -281,7 +275,7 @@ The extension may process:
 1. Visible LinkedIn post text.
 2. Post author display name, if needed for UI context.
 3. Public engagement text visible in the post, if needed.
-4. User's Gemini model settings.
+4. Feed Lens Gemini runtime settings.
 5. User's Gemini API key.
 6. Local analysis cache.
 
@@ -297,23 +291,9 @@ The product creator will not collect:
 6. User identity.
 7. Analytics, unless explicitly added later with opt-in.
 
-### Storage Modes
+### Key Storage
 
-Default mode should be privacy-preserving.
-
-1. **Session mode**
-   - API key is stored in memory or session storage.
-   - API key is cleared when the browser closes.
-   - Best privacy.
-
-2. **Local mode**
-   - API key is stored locally in the user's browser.
-   - More convenient but less private.
-   - User should see a clear warning before enabling persistent key storage.
-
-3. **Local proxy mode**
-   - Deferred until a later version.
-   - Intended for advanced users who want stronger control over API keys.
+The Gemini API key is stored locally in Chrome extension storage on the user's device. Feed Lens does not collect the key or send it to a creator-controlled backend.
 
 ### Local Testing Key
 
@@ -355,19 +335,14 @@ The first version should not implement these providers:
 3. Ollama or local model
 4. Custom OpenAI-compatible endpoint
 
-### Model Configuration
+### Runtime Configuration
 
-Users should be able to configure:
+The first customer-facing version should keep setup simple:
 
-1. Gemini API key
-2. Gemini model name
-3. Storage mode
-4. Temperature
-5. Max tokens
-6. Analysis depth:
-   - Fast
-   - Balanced
-   - Deep
+1. Users configure only their Gemini API key.
+2. Users accept the privacy notice before analysis runs.
+3. Feed Lens uses the fixed Gemini model `gemini-3.5-flash`.
+4. Model tuning, analysis depth, sensitivity, storage mode, and cache behavior are internal defaults, not user-facing settings.
 
 ## 11. Classification and Scoring System
 
@@ -639,28 +614,10 @@ Toxic author
 Users should be able to configure:
 
 1. Gemini API key.
-2. Gemini model name.
-3. Key storage mode:
-   - Session only
-   - Local persistent
-   - Local proxy is deferred until a later version
-4. Seamless background analysis on LinkedIn: on or off.
-5. Manual re-analysis for visible posts.
-6. Store local cache: on or off.
-7. Clear cache.
-8. Highlight intensity:
-    - Subtle
-    - Standard
-    - Strong
-9. Analysis sensitivity:
-    - Conservative
-    - Balanced
-    - Strict
-10. UI mode:
-    - Feed highlights
-    - Marker only
-    - Side panel only
-    - Both
+2. Privacy notice acceptance.
+3. Clear saved Gemini API key.
+
+Operational controls such as pause/resume and manual analysis live in the popup, not the settings page. Model selection, key storage mode, cache behavior, analysis depth, sensitivity, temperature, max output tokens, highlight intensity, and UI mode are internal defaults for the simplified customer-facing MVP.
 
 ## 15. Caching
 
@@ -690,7 +647,7 @@ Cache value:
 
 Cache should remain local only.
 
-Users should be able to clear cache anytime.
+The simplified customer-facing settings page does not expose cache controls. Users can clear cached extension data by clearing extension/browser data.
 
 ## 16. Error Handling
 
@@ -703,7 +660,7 @@ No Gemini API key configured. Add your Gemini API key in settings.
 ### Provider Error
 
 ```text
-Gemini returned an error. Check your API key, model name, billing status, or rate limits.
+Gemini returned an error. Check your API key, billing status, or rate limits.
 ```
 
 ### No Posts Detected
@@ -715,7 +672,7 @@ No visible LinkedIn posts detected. Scroll to your feed and try again.
 ### Invalid LLM Response
 
 ```text
-The model returned an invalid response. Try again or switch models.
+Gemini returned an invalid response. Try again in a moment.
 ```
 
 ### Rate Limit
@@ -824,7 +781,7 @@ The safest public version should make background analysis clearly opt-in during 
 
 ### Milestone 2: LLM Integration
 
-- Add Gemini settings.
+- Add Gemini key setup and privacy acceptance.
 - Support Gemini API only.
 - Send one post for analysis.
 - Return structured marker, score, and signal JSON.
@@ -838,9 +795,8 @@ The safest public version should make background analysis clearly opt-in during 
 
 ### Milestone 4: Privacy and Security
 
-- Add session-only key mode.
+- Add local Chrome extension key storage.
 - Add local cache.
-- Add clear cache button.
 - Remove production logs that contain post text, analysis output, or sensitive content.
 - Add privacy notice.
 
@@ -915,7 +871,7 @@ Misinformation and manipulation detection are subjective when based only on post
 
 ### Security Risk
 
-Users' Gemini API keys are sensitive. The extension should provide session-only storage by default and avoid logging or bundling keys.
+Users' Gemini API keys are sensitive. The extension should store keys only in Chrome extension storage on the user's device and avoid logging or bundling keys.
 
 ### Cost Risk
 
@@ -929,12 +885,11 @@ LinkedIn's page structure may change. The extension should be tested regularly a
 
 1. How subtle should the default green, yellow, and red visual treatment be?
 2. Should Feed Lens default to feed highlights, marker-only mode, or side-panel-only mode?
-3. Should API keys be stored persistently or session-only by default?
-4. Should the product be open source from day one?
-5. Which provider should be added after Gemini, if any?
-6. Should the first version be LinkedIn-only or generic text-selection based?
-7. Should there be a "neutral rewrite" feature?
-8. Should there be a conservative scoring mode to reduce false positives?
+3. Should the product be open source from day one?
+4. Which provider should be added after Gemini, if any?
+5. Should the first version be LinkedIn-only or generic text-selection based?
+6. Should there be a "neutral rewrite" feature?
+7. Should there be a conservative scoring mode to reduce false positives?
 
 ## 25. Recommended MVP Decision
 
@@ -947,7 +902,7 @@ Mode: Seamless visible-post analysis after user setup
 UI: Subtle green/yellow/red feed markers + side panel details
 AI: Gemini BYOK
 Provider: Gemini API only
-Storage: Session-only key by default
+Storage: Local Chrome extension storage for the Gemini key
 Backend: None
 Data: No creator-side storage
 Release: Open-source developer beta

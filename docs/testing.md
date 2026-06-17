@@ -40,17 +40,16 @@ CLAUDE.md -> AGENTS.md
 3. Enable Developer mode.
 4. Load unpacked extension from `dist/`.
 5. Open Feed Lens settings.
-6. Choose session-only key storage for first test.
-7. Enter a Gemini API key.
-8. Accept the privacy notice.
-9. Open `https://www.linkedin.com/feed/`.
-10. Open the Feed Lens popup and click Analyze visible.
-11. Confirm visible posts receive calm green/yellow/red markers.
-12. Click a marker and confirm the inline detail opens.
-13. Open the side panel and confirm session results appear.
-14. Test copy, hide, useful/not useful, and re-analyze.
-15. Pause Feed Lens from the popup and confirm no new automatic analysis runs.
-16. Clear markers from the popup and clear cache from settings.
+6. Enter a Gemini API key.
+7. Accept the privacy notice.
+8. Open `https://www.linkedin.com/feed/`.
+9. Open the Feed Lens popup and click Analyze visible.
+10. Confirm visible posts receive calm green/yellow/red markers.
+11. Click a marker and confirm the inline detail opens.
+12. Open the side panel and confirm session results appear.
+13. Test copy, hide, useful/not useful, and re-analyze.
+14. Pause Feed Lens from the popup and confirm no new automatic analysis runs.
+15. Clear markers from the popup.
 
 ## Privacy/Security Manual Checks
 
@@ -59,6 +58,7 @@ CLAUDE.md -> AGENTS.md
 - Confirm content script requests analysis through the background worker.
 - Confirm content script code does not read `chrome.storage` keys directly.
 - Confirm local cache entries are keyed by hash/model/prompt version and do not store full raw post text.
+- Confirm Gemini keys are stored only in `chrome.storage.local`.
 - Confirm the side panel result list is session-only.
 
 ## Known MVP Limits

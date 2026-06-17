@@ -31,23 +31,59 @@ describe("extension storage helpers", () => {
     await expect(getSettings()).resolves.toEqual(DEFAULT_SETTINGS);
   });
 
-  it("stores API keys in session storage by default and clears both key locations", async () => {
-    await saveApiKey(" test-key ", "session");
+  it("stores API keys in local storage by default and clears both key locations", async () => {
+    await saveApiKey(" test-key ");
     await expect(getApiKey(DEFAULT_SETTINGS)).resolves.toBe("test-key");
-    expect(getChromeMock().storage.local.data).not.toHaveProperty("feedlens.geminiApiKey.local.v1");
-
-    await clearApiKey();
-    await expect(hasApiKey(DEFAULT_SETTINGS)).resolves.toBe(false);
-  });
-
-  it("stores API keys in local storage only when local mode is selected", async () => {
-    const settings = await saveSettings({ storageMode: "local" });
-    await saveApiKey("local-key", "local");
-
-    await expect(getApiKey(settings)).resolves.toBe("local-key");
+    expect(getChromeMock().storage.local.data).toHaveProperty(
+      "feedlens.geminiApiKey.local.v1",
+      "test-key"
+    );
     expect(getChromeMock().storage.session.data).not.toHaveProperty(
       "feedlens.geminiApiKey.session.v1"
     );
+
+    await getChromeMock().storage.session.set({
+      "feedlens.geminiApiKey.session.v1": "legacy-session-key"
+    });
+
+    await clearApiKey();
+    await expect(hasApiKey(DEFAULT_SETTINGS)).resolves.toBe(false);
+    expect(getChromeMock().storage.session.data).not.toHaveProperty(
+      "feedlens.geminiApiKey.session.v1"
+    );
+  });
+
+  it("ignores legacy session-only API keys", async () => {
+    await getChromeMock().storage.session.set({
+      "feedlens.geminiApiKey.session.v1": "legacy-session-key"
+    });
+
+    await expect(getApiKey(DEFAULT_SETTINGS)).resolves.toBeUndefined();
+    await expect(hasApiKey(DEFAULT_SETTINGS)).resolves.toBe(false);
+  });
+
+  it("resets hidden dev-time settings to customer-facing defaults", async () => {
+    const settings = await saveSettings({
+      privacyAccepted: true,
+      enabled: false,
+      backgroundAnalysis: false,
+      storageMode: "session",
+      model: "gemini-2.5-flash-lite",
+      temperature: 1.8,
+      maxOutputTokens: 4096,
+      analysisDepth: "deep",
+      storeCache: false,
+      highlightIntensity: "strong",
+      sensitivity: "strict",
+      uiMode: "side_panel_only",
+      maxVisiblePostsPerRun: 20
+    });
+
+    expect(settings).toEqual({
+      ...DEFAULT_SETTINGS,
+      enabled: false,
+      privacyAccepted: true
+    });
   });
 
   it("stores analysis cache entries without raw post text", async () => {
@@ -55,7 +91,7 @@ describe("extension storage helpers", () => {
       cacheKey: "hash-model-prompt",
       result,
       createdAt: new Date().toISOString(),
-      model: "gemini-2.5-flash",
+      model: DEFAULT_SETTINGS.model,
       promptVersion: "feed-lens-v1"
     });
 

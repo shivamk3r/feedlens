@@ -74,7 +74,6 @@ async function render(state: PopupState = {}): Promise<void> {
         <div class="fl-stats">
           <span>Cache: ${status.cacheEntryCount}</span>
           <span>Session results: ${status.sessionResultCount}</span>
-          <span>Model: ${escapeHtml(status.settings.model)}</span>
         </div>
       </div>
     </section>

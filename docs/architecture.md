@@ -52,9 +52,8 @@ flowchart TD
 
 | Data | Storage | Persistence | Notes |
 | --- | --- | --- | --- |
-| Settings | `chrome.storage.local` | Persistent | No post text or keys except selected key mode. |
-| Gemini key, session mode | `chrome.storage.session` | Browser session | Default and most privacy-preserving mode. |
-| Gemini key, local mode | `chrome.storage.local` | Persistent | User must explicitly select this. |
+| Settings | `chrome.storage.local` | Persistent | No post text. Customer-facing settings are limited to privacy acceptance. |
+| Gemini key | `chrome.storage.local` | Persistent | Stored only in Chrome extension storage on the user's device. |
 | Analysis cache | `chrome.storage.local` | Persistent | Stores structured result by hash/model/prompt version, not raw text. |
 | Session result list | `chrome.storage.session` | Browser session | Stores result plus short snippet for side panel review. |
 
@@ -63,10 +62,10 @@ flowchart TD
 The background service worker calls:
 
 ```text
-POST https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent
+POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent
 ```
 
-The API key is sent with the `x-goog-api-key` header, not in the URL. The request uses Gemini structured JSON output with the Feed Lens schema. The default model is `gemini-2.5-flash`, and the user can configure another Gemini model name.
+The API key is sent with the `x-goog-api-key` header, not in the URL. The request uses Gemini structured JSON output with the Feed Lens schema and the fixed `gemini-3.5-flash` model.
 
 ## Scoring Contract
 

@@ -34,7 +34,7 @@ const post: ExtractedPost = {
 describe("Gemini analysis service", () => {
   beforeEach(async () => {
     await saveSettings({ privacyAccepted: true });
-    await saveApiKey("gemini-test-key", "session");
+    await saveApiKey("gemini-test-key");
   });
 
   it("sends structured-output requests with the key in a header", async () => {
@@ -48,7 +48,7 @@ describe("Gemini analysis service", () => {
 
     expect(result).toEqual(validAnalysis);
     const [url, init] = fetchImpl.mock.calls[0] as [RequestInfo | URL, RequestInit];
-    expect(String(url)).toContain("/models/gemini-2.5-flash:generateContent");
+    expect(String(url)).toContain("/models/gemini-3.5-flash:generateContent");
     expect(String(url)).not.toContain("secret-key");
     expect((init as RequestInit).headers).toMatchObject({ "x-goog-api-key": "secret-key" });
 

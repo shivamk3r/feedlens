@@ -28,11 +28,9 @@ export async function saveSettings(patch: Partial<FeedLensSettings>): Promise<Fe
   return settings;
 }
 
-export async function getApiKey(settings = DEFAULT_SETTINGS): Promise<string | undefined> {
-  const area = getKeyArea(settings.storageMode);
-  const keyName = settings.storageMode === "local" ? LOCAL_API_KEY : SESSION_API_KEY;
-  const stored = await area.get(keyName);
-  const value = stored[keyName];
+export async function getApiKey(_settings = DEFAULT_SETTINGS): Promise<string | undefined> {
+  const stored = await chrome.storage.local.get(LOCAL_API_KEY);
+  const value = stored[LOCAL_API_KEY];
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }
 
@@ -40,21 +38,15 @@ export async function hasApiKey(settings = DEFAULT_SETTINGS): Promise<boolean> {
   return Boolean(await getApiKey(settings));
 }
 
-export async function saveApiKey(apiKey: string, storageMode: FeedLensSettings["storageMode"]): Promise<void> {
+export async function saveApiKey(apiKey: string): Promise<void> {
   const trimmed = apiKey.trim();
   if (!trimmed) {
     await clearApiKey();
     return;
   }
 
-  if (storageMode === "local") {
-    await chrome.storage.local.set({ [LOCAL_API_KEY]: trimmed });
-    await chrome.storage.session.remove(SESSION_API_KEY);
-    return;
-  }
-
-  await chrome.storage.session.set({ [SESSION_API_KEY]: trimmed });
-  await chrome.storage.local.remove(LOCAL_API_KEY);
+  await chrome.storage.local.set({ [LOCAL_API_KEY]: trimmed });
+  await chrome.storage.session.remove(SESSION_API_KEY);
 }
 
 export async function clearApiKey(): Promise<void> {
@@ -161,44 +153,18 @@ export function normalizeSettings(value: unknown): FeedLensSettings {
 
   return {
     enabled: booleanOr(record.enabled, DEFAULT_SETTINGS.enabled),
-    backgroundAnalysis: booleanOr(record.backgroundAnalysis, DEFAULT_SETTINGS.backgroundAnalysis),
+    backgroundAnalysis: DEFAULT_SETTINGS.backgroundAnalysis,
     privacyAccepted: booleanOr(record.privacyAccepted, DEFAULT_SETTINGS.privacyAccepted),
-    storageMode: oneOf(record.storageMode, ["session", "local"], DEFAULT_SETTINGS.storageMode),
-    model: stringOr(record.model, DEFAULT_SETTINGS.model),
-    temperature: numberInRange(record.temperature, 0, 2, DEFAULT_SETTINGS.temperature),
-    maxOutputTokens: integerInRange(
-      record.maxOutputTokens,
-      512,
-      4096,
-      DEFAULT_SETTINGS.maxOutputTokens
-    ),
-    analysisDepth: oneOf(
-      record.analysisDepth,
-      ["fast", "balanced", "deep"],
-      DEFAULT_SETTINGS.analysisDepth
-    ),
-    storeCache: booleanOr(record.storeCache, DEFAULT_SETTINGS.storeCache),
-    highlightIntensity: oneOf(
-      record.highlightIntensity,
-      ["subtle", "standard", "strong"],
-      DEFAULT_SETTINGS.highlightIntensity
-    ),
-    sensitivity: oneOf(
-      record.sensitivity,
-      ["conservative", "balanced", "strict"],
-      DEFAULT_SETTINGS.sensitivity
-    ),
-    uiMode: oneOf(
-      record.uiMode,
-      ["feed_highlights", "marker_only", "side_panel_only", "both"],
-      DEFAULT_SETTINGS.uiMode
-    ),
-    maxVisiblePostsPerRun: integerInRange(
-      record.maxVisiblePostsPerRun,
-      1,
-      20,
-      DEFAULT_SETTINGS.maxVisiblePostsPerRun
-    )
+    storageMode: DEFAULT_SETTINGS.storageMode,
+    model: DEFAULT_SETTINGS.model,
+    temperature: DEFAULT_SETTINGS.temperature,
+    maxOutputTokens: DEFAULT_SETTINGS.maxOutputTokens,
+    analysisDepth: DEFAULT_SETTINGS.analysisDepth,
+    storeCache: DEFAULT_SETTINGS.storeCache,
+    highlightIntensity: DEFAULT_SETTINGS.highlightIntensity,
+    sensitivity: DEFAULT_SETTINGS.sensitivity,
+    uiMode: DEFAULT_SETTINGS.uiMode,
+    maxVisiblePostsPerRun: DEFAULT_SETTINGS.maxVisiblePostsPerRun
   };
 }
 
@@ -216,30 +182,8 @@ async function getRecordMap<T>(area: StorageArea, key: string): Promise<Record<s
   return isRecord(value) ? (value as Record<string, T>) : {};
 }
 
-function getKeyArea(mode: FeedLensSettings["storageMode"]): StorageArea {
-  return mode === "local" ? chrome.storage.local : chrome.storage.session;
-}
-
 function booleanOr(value: unknown, fallback: boolean): boolean {
   return typeof value === "boolean" ? value : fallback;
-}
-
-function stringOr(value: unknown, fallback: string): string {
-  return typeof value === "string" && value.trim() ? value.trim() : fallback;
-}
-
-function numberInRange(value: unknown, min: number, max: number, fallback: number): number {
-  return typeof value === "number" && Number.isFinite(value)
-    ? Math.min(max, Math.max(min, value))
-    : fallback;
-}
-
-function integerInRange(value: unknown, min: number, max: number, fallback: number): number {
-  return Math.round(numberInRange(value, min, max, fallback));
-}
-
-function oneOf<T extends string>(value: unknown, allowed: readonly T[], fallback: T): T {
-  return typeof value === "string" && allowed.includes(value as T) ? (value as T) : fallback;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

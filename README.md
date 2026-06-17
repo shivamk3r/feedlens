@@ -11,7 +11,7 @@ This repository now contains a loadable Manifest V3 Chrome extension with:
 - LinkedIn content script for visible-post detection, hashing, and inline markers.
 - Background service worker that owns Gemini calls and never exposes API keys to page scripts.
 - Popup controls for status, pause/resume, manual analysis, marker clearing, settings, and side panel access.
-- Options page for Gemini key setup, privacy notice acceptance, model/tuning controls, cache, and display preferences.
+- Options page for Gemini key setup and privacy notice acceptance.
 - Side panel for session-local analysis details, scores, signals, copy, hide, feedback, and re-analysis.
 - Local-only analysis cache and session-only result list.
 - TypeScript build, typecheck, and test tooling.
