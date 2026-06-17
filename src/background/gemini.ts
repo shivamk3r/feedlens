@@ -156,7 +156,15 @@ export async function callGemini(
     throw new Error("Gemini response did not contain text.");
   }
 
-  return validateAnalysisResult(parseAnalysisJson(text));
+  try {
+    return validateAnalysisResult(parseAnalysisJson(text));
+  } catch (error) {
+    const invalid = new Error(
+      error instanceof Error ? error.message : "Gemini returned invalid JSON."
+    );
+    invalid.name = "InvalidGeminiResponseError";
+    throw invalid;
+  }
 }
 
 async function geminiHttpError(response: Response): Promise<Error & { status?: number }> {
@@ -182,7 +190,10 @@ function normalizeGeminiError(error: unknown) {
     return { code: "rate_limited" as const, message: ERROR_MESSAGES.rateLimited, retryable: true };
   }
 
-  if (error instanceof SyntaxError || (error instanceof Error && error.message.includes("must be"))) {
+  if (
+    error instanceof SyntaxError ||
+    (error instanceof Error && error.name === "InvalidGeminiResponseError")
+  ) {
     return {
       code: "invalid_response" as const,
       message: ERROR_MESSAGES.invalidResponse,

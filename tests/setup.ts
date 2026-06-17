@@ -1,15 +1,7 @@
-import { vi } from "vitest";
+import { beforeEach, vi } from "vitest";
+import { resetChromeMock } from "./helpers/chrome";
 
-vi.stubGlobal("chrome", {
-  runtime: {
-    openOptionsPage: vi.fn(),
-    onInstalled: { addListener: vi.fn() }
-  },
-  sidePanel: {
-    setPanelBehavior: vi.fn()
-  },
-  storage: {
-    local: {},
-    session: {}
-  }
+beforeEach(() => {
+  resetChromeMock();
+  vi.unstubAllEnvs();
 });
