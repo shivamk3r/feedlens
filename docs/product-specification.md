@@ -8,13 +8,13 @@ Fixed name: **Feed Lens**
 
 ### One-Line Description
 
-Feed Lens is a privacy-first Chrome extension that works quietly behind the scenes to help users identify misinformation risk, manipulation, engagement-bait, psychological pressure, and high-quality information in LinkedIn feed posts using their own LLM API key or local model.
+Feed Lens is a privacy-first Chrome extension that works quietly behind the scenes to help users identify misinformation risk, manipulation, engagement-bait, psychological pressure, and high-quality information in LinkedIn feed posts using their own Gemini API key.
 
 ### Product Summary
 
 Feed Lens analyzes posts visible in a user's LinkedIn feed and overlays subtle, color-coded guidance directly on the feed. Posts with high-quality information are marked green, ambiguous or mixed-quality posts are marked yellow, and posts with strong misinformation risk or manipulative pressure are marked red.
 
-The extension does not require a user account, does not operate a backend server, does not store LinkedIn feed data, and does not pay for LLM usage. Users bring their own model provider key, such as an OpenAI, Anthropic, Gemini, or local model configuration.
+The extension does not require a user account, does not operate a backend server, does not store LinkedIn feed data, and does not pay for LLM usage. In the first version, users bring their own Gemini API key. Future versions may add other model providers or local model support, but they are out of scope for the initial implementation.
 
 The product is not intended to censor content, block posts, or label people as manipulative. It helps users navigate their digital life with more awareness by making it clear when a post appears informative, uncertain, unsupported, emotionally pressuring, or potentially manipulative. Users can still consume any content they want, but Feed Lens helps them notice what kind of content they are consuming.
 
@@ -39,7 +39,7 @@ Recommended public copy:
 ```text
 Feed Lens helps you understand the quality and persuasive pressure of the information you consume on LinkedIn.
 
-It subtly marks posts as green, yellow, or red based on signals like evidence quality, misinformation risk, urgency, fear framing, vague authority, social proof pressure, and engagement bait. It uses your own AI model key or local model, and your feed does not pass through our servers.
+It subtly marks posts as green, yellow, or red based on signals like evidence quality, misinformation risk, urgency, fear framing, vague authority, social proof pressure, and engagement bait. It uses your own Gemini API key, and your feed does not pass through our servers.
 ```
 
 ## 2. Problem Statement
@@ -87,13 +87,14 @@ Users need a lightweight tool that helps them move through their digital life wi
    - No storage of LinkedIn feed data by the product creator.
 
 2. **User-controlled AI**
-   - Users provide their own API key or local model endpoint.
-   - Users control model provider, cost, and privacy tradeoffs.
+   - Users provide their own Gemini API key.
+   - Users control their Gemini usage, cost, and privacy tradeoffs.
+   - Other model providers and local endpoints are future work, not first-version scope.
 
 3. **Seamless but user-controlled**
    - Once configured, the extension can analyze visible feed posts quietly in the background.
    - Users can pause analysis, disable highlighting, clear results, or switch to manual-only behavior.
-   - The extension does not analyze anything until the user configures a provider and accepts the privacy notice.
+   - The extension does not analyze anything until the user configures Gemini access and accepts the privacy notice.
 
 4. **Explain, do not judge**
    - The extension explains information-quality, misinformation-risk, and persuasion signals.
@@ -117,7 +118,7 @@ Users need a lightweight tool that helps them move through their digital life wi
 1. Analyze visible LinkedIn feed posts after the user has configured the extension.
 2. Detect misinformation-risk, manipulation, persuasion, and information-quality signals in each post.
 3. Mark posts with subtle green, yellow, or red visual treatment.
-4. Allow users to configure their own LLM provider key or local endpoint.
+4. Allow users to configure their own Gemini API key.
 5. Avoid storing user data on external servers.
 6. Provide inline feed markings plus a side panel or popover for details.
 7. Work seamlessly behind the scenes while preserving user controls to pause, re-analyze, hide, or clear results.
@@ -125,7 +126,7 @@ Users need a lightweight tool that helps them move through their digital life wi
 ### Long-Term Goals
 
 1. Support multiple social platforms.
-2. Support local models.
+2. Support additional model providers and local models.
 3. Provide personalized sensitivity settings.
 4. Provide media literacy education.
 5. Allow users to compare different styles of persuasion, manipulation, and misinformation.
@@ -145,6 +146,7 @@ The MVP will not:
 8. Replace human judgment.
 9. Use the official LinkedIn API.
 10. Require users to create an account.
+11. Support non-Gemini providers or local model endpoints.
 
 ## 6. MVP User Flows
 
@@ -152,21 +154,16 @@ The MVP will not:
 
 1. User installs the Chrome extension.
 2. User opens the extension settings page.
-3. User selects model provider:
-   - OpenAI
-   - Anthropic
-   - Gemini
-   - Ollama or local endpoint
-   - Custom OpenAI-compatible endpoint
-4. User enters API key or local endpoint.
+3. User confirms Gemini as the model provider.
+4. User enters their Gemini API key.
 5. User chooses storage mode:
    - Session-only storage: key is cleared when the browser closes.
    - Local storage: key persists on the user's device.
-   - Local proxy mode: key is kept outside the extension and requests go to a local endpoint.
+   - Local proxy mode is deferred until a later version.
 6. User accepts the privacy notice:
 
 ```text
-Visible posts are analyzed using your configured provider. Feed Lens does not operate a backend and does not store your data.
+Visible posts are analyzed using Gemini with your API key. Feed Lens does not operate a backend and does not store your data.
 ```
 
 7. User opens the LinkedIn feed.
@@ -179,7 +176,7 @@ Visible posts are analyzed using your configured provider. Feed Lens does not op
 1. User visits LinkedIn feed.
 2. Extension detects posts as they become visible.
 3. Extension extracts post text without auto-scrolling or engaging with the page.
-4. Extension sends visible post text to the configured model provider or local endpoint.
+4. Extension sends visible post text directly to the Gemini API using the user's configured key.
 5. Extension receives structured analysis.
 6. Extension displays a subtle feed marker:
    - Green for high-quality information and low manipulation risk.
@@ -232,10 +229,10 @@ Required components:
    - Does not access API keys.
 
 2. **Background service worker**
-   - Handles communication with LLM providers.
+   - Handles communication with the Gemini API.
    - Reads API key from extension storage.
    - Sends post text for analysis.
-   - Handles provider errors and invalid responses.
+   - Handles Gemini API errors and invalid responses.
    - Returns structured results to the content script.
 
 3. **Popup UI**
@@ -245,12 +242,10 @@ Required components:
    - Shows setup warnings and error states.
 
 4. **Options/settings page**
-   - Provider selection.
-   - API key input.
+   - Gemini API key input.
    - Model selection.
    - Privacy controls.
    - Cache controls.
-   - Local endpoint configuration.
 
 5. **Optional side panel**
    - Displays analysis for selected posts.
@@ -275,7 +270,7 @@ Suggested permissions:
 }
 ```
 
-For MVP, keep permissions narrow and limited to LinkedIn. Behind-the-scenes analysis should only run after the user configures a provider, accepts the privacy notice, and visits LinkedIn in their own browser session. Avoid broad browsing permissions and do not analyze non-LinkedIn pages unless support is explicitly added later.
+For MVP, keep permissions narrow and limited to LinkedIn. Behind-the-scenes analysis should only run after the user configures Gemini access, accepts the privacy notice, and visits LinkedIn in their own browser session. Avoid broad browsing permissions and do not analyze non-LinkedIn pages unless support is explicitly added later.
 
 ## 9. Data Handling and Privacy
 
@@ -286,8 +281,8 @@ The extension may process:
 1. Visible LinkedIn post text.
 2. Post author display name, if needed for UI context.
 3. Public engagement text visible in the post, if needed.
-4. User's model provider settings.
-5. User's API key or local endpoint.
+4. User's Gemini model settings.
+5. User's Gemini API key.
 6. Local analysis cache.
 
 ### Data Not Collected by the Product Creator
@@ -317,46 +312,59 @@ Default mode should be privacy-preserving.
    - User should see a clear warning before enabling persistent key storage.
 
 3. **Local proxy mode**
-   - API key is never stored in the extension.
-   - Extension calls a local endpoint such as `http://localhost:8787/analyze`.
-   - Recommended for advanced users who want stronger control over API keys.
+   - Deferred until a later version.
+   - Intended for advanced users who want stronger control over API keys.
+
+### Local Testing Key
+
+For local development and test tooling, copy `.env-example` to a root `.env` file and set:
+
+```text
+GEMINI_API_KEY=your-gemini-api-key
+```
+
+The `.env` file must remain local and must not be committed. Do not print or log the key. Do not compile the `.env` value into distributable Chrome extension assets.
 
 ### Privacy Notice
 
 Suggested user-facing copy:
 
 ```text
-Feed Lens analyzes visible LinkedIn posts using the model provider you configure.
+Feed Lens analyzes visible LinkedIn posts using Gemini with the API key you configure.
 
 We do not run a backend server.
 We do not store your LinkedIn feed.
 We do not collect your API key.
 We do not sell or share your data.
 
-When Feed Lens analyzes a visible post, the post text may be sent directly from your browser to your selected model provider, such as OpenAI, Anthropic, Gemini, or your local model endpoint. Your use of that provider is subject to their privacy policy and billing terms.
+When Feed Lens analyzes a visible post, the post text may be sent directly from your browser to the Gemini API. Your use of Gemini is subject to Google's privacy policy and billing terms.
 ```
 
 ## 10. LLM Provider Support
 
 ### MVP Providers
 
+1. Gemini API only
+
+### Deferred Providers
+
+The first version should not implement these providers:
+
 1. OpenAI API
 2. Anthropic API
-3. Gemini API
-4. Ollama or local model
-5. Custom OpenAI-compatible endpoint
+3. Ollama or local model
+4. Custom OpenAI-compatible endpoint
 
 ### Model Configuration
 
 Users should be able to configure:
 
-1. Provider
-2. API key
-3. Model name
-4. Base URL for custom providers
-5. Temperature
-6. Max tokens
-7. Analysis depth:
+1. Gemini API key
+2. Gemini model name
+3. Storage mode
+4. Temperature
+5. Max tokens
+6. Analysis depth:
    - Fast
    - Balanced
    - Deep
@@ -630,27 +638,25 @@ Toxic author
 
 Users should be able to configure:
 
-1. Model provider.
-2. API key.
-3. Model name.
-4. Local endpoint.
-5. Seamless background analysis on LinkedIn: on or off.
-6. Manual re-analysis for visible posts.
-7. Store local cache: on or off.
-8. Clear cache.
-9. Storage mode:
+1. Gemini API key.
+2. Gemini model name.
+3. Key storage mode:
    - Session only
    - Local persistent
-   - Local proxy
-10. Highlight intensity:
+   - Local proxy is deferred until a later version
+4. Seamless background analysis on LinkedIn: on or off.
+5. Manual re-analysis for visible posts.
+6. Store local cache: on or off.
+7. Clear cache.
+8. Highlight intensity:
     - Subtle
     - Standard
     - Strong
-11. Analysis sensitivity:
+9. Analysis sensitivity:
     - Conservative
     - Balanced
     - Strict
-12. UI mode:
+10. UI mode:
     - Feed highlights
     - Marker only
     - Side panel only
@@ -691,13 +697,13 @@ Users should be able to clear cache anytime.
 ### Missing API Key
 
 ```text
-No model provider configured. Add your API key or local model endpoint in settings.
+No Gemini API key configured. Add your Gemini API key in settings.
 ```
 
 ### Provider Error
 
 ```text
-The model provider returned an error. Check your API key, model name, billing status, or rate limits.
+Gemini returned an error. Check your API key, model name, billing status, or rate limits.
 ```
 
 ### No Posts Detected
@@ -715,7 +721,7 @@ The model returned an invalid response. Try again or switch models.
 ### Rate Limit
 
 ```text
-Your model provider rate limit was reached. Try fewer posts or wait before analyzing again.
+Your Gemini rate limit was reached. Try fewer posts or wait before analyzing again.
 ```
 
 ## 17. Technical Architecture
@@ -732,14 +738,14 @@ Content Script
    |
    v
 Background Service Worker
-   - Reads provider settings
-   - Calls LLM provider
+   - Reads Gemini settings
+   - Calls Gemini API
    - Handles errors
    - Returns JSON
    |
    v
 Extension Storage
-   - API key/config
+   - Gemini API key/config
    - Local cache
    - User preferences
    |
@@ -786,7 +792,7 @@ function getVisiblePosts(): ExtractedPost[] {
 4. No analytics should capture post text or keys.
 5. Console logs should not contain post text in production.
 6. Users should be warned before enabling persistent key storage.
-7. Local proxy mode should be recommended for advanced users.
+7. Local proxy mode should be considered later for advanced users.
 8. Extension should be open source if possible to increase trust.
 
 ## 19. Legal and Policy Considerations
@@ -818,8 +824,8 @@ The safest public version should make background analysis clearly opt-in during 
 
 ### Milestone 2: LLM Integration
 
-- Add provider settings.
-- Support OpenAI-compatible API.
+- Add Gemini settings.
+- Support Gemini API only.
 - Send one post for analysis.
 - Return structured marker, score, and signal JSON.
 
@@ -838,11 +844,11 @@ The safest public version should make background analysis clearly opt-in during 
 - Remove production logs that contain post text, analysis output, or sensitive content.
 - Add privacy notice.
 
-### Milestone 5: Local Model Support
+### Milestone 5: Provider Expansion
 
-- Add Ollama/local endpoint support.
-- Add local proxy option.
-- Add custom model configuration.
+- Evaluate OpenAI, Anthropic, Ollama/local endpoint, or custom provider support.
+- Add local proxy option if the project needs stronger key isolation.
+- Keep provider expansion separate from the first-version Gemini implementation.
 
 ### Milestone 6: Beta Release
 
@@ -880,17 +886,18 @@ Avoid collecting:
 3. Support for Reddit.
 4. Support for YouTube comments.
 5. Local-only classifier model.
-6. Rules-based fast pre-filtering.
-7. Custom user-defined manipulation categories.
-8. Educational explanations.
-9. "Rewrite this post to be less manipulative."
-10. "Show me the neutral version of this post."
-11. Team training mode.
-12. Browser side panel mode.
-13. Export analysis report locally.
-14. Prompt version comparison.
-15. Model comparison mode.
-16. Retrieval-assisted fact checking for sources where the user explicitly enables it.
+6. OpenAI, Anthropic, Ollama/local model, and custom endpoint support.
+7. Rules-based fast pre-filtering.
+8. Custom user-defined manipulation categories.
+9. Educational explanations.
+10. "Rewrite this post to be less manipulative."
+11. "Show me the neutral version of this post."
+12. Team training mode.
+13. Browser side panel mode.
+14. Export analysis report locally.
+15. Prompt version comparison.
+16. Model comparison mode.
+17. Retrieval-assisted fact checking for sources where the user explicitly enables it.
 
 ## 23. Major Risks
 
@@ -900,7 +907,7 @@ LinkedIn may object to extensions that modify or analyze the feed. The product s
 
 ### Privacy Risk
 
-Even if the creator stores nothing, post text may be sent to third-party model providers. This must be clearly disclosed.
+Even if the creator stores nothing, post text may be sent to the Gemini API. This must be clearly disclosed.
 
 ### Accuracy Risk
 
@@ -908,11 +915,11 @@ Misinformation and manipulation detection are subjective when based only on post
 
 ### Security Risk
 
-Users' API keys are sensitive. The extension should provide session-only and local-proxy options.
+Users' Gemini API keys are sensitive. The extension should provide session-only storage by default and avoid logging or bundling keys.
 
 ### Cost Risk
 
-Users may accidentally spend too much on LLM calls. The product should show estimated token usage and allow users to limit the number of posts analyzed.
+Users may accidentally spend too much on Gemini calls. The product should show estimated token usage and allow users to limit the number of posts analyzed.
 
 ### DOM Fragility Risk
 
@@ -924,7 +931,7 @@ LinkedIn's page structure may change. The extension should be tested regularly a
 2. Should Feed Lens default to feed highlights, marker-only mode, or side-panel-only mode?
 3. Should API keys be stored persistently or session-only by default?
 4. Should the product be open source from day one?
-5. Should local model support be part of MVP or v2?
+5. Which provider should be added after Gemini, if any?
 6. Should the first version be LinkedIn-only or generic text-selection based?
 7. Should there be a "neutral rewrite" feature?
 8. Should there be a conservative scoring mode to reduce false positives?
@@ -938,7 +945,8 @@ Platform: Chrome extension
 Target: LinkedIn feed
 Mode: Seamless visible-post analysis after user setup
 UI: Subtle green/yellow/red feed markers + side panel details
-AI: BYOK
+AI: Gemini BYOK
+Provider: Gemini API only
 Storage: Session-only key by default
 Backend: None
 Data: No creator-side storage

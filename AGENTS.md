@@ -4,6 +4,14 @@
 
 This repository builds **Feed Lens**, a privacy-first Chrome extension for scoring and surfacing manipulation-risk and information-quality signals on LinkedIn posts.
 
+## First-Version Product Scope
+
+- The first implementation supports **Gemini only**.
+- Use `GEMINI_API_KEY` as the canonical key name for local testing and documentation.
+- Local developer testing may load `GEMINI_API_KEY` from a local `.env` file.
+- Do not add OpenAI, Anthropic, Ollama, local model, or custom provider support unless explicitly requested later.
+- Do not compile or bundle any `.env` value into a distributable Chrome extension build.
+
 ## First Reads for Agents
 
 Before any other changes, AI agents should read in this order:
@@ -26,6 +34,7 @@ Before any other changes, AI agents should read in this order:
 
 - Do not add real API keys, secrets, or user data.
 - Never include secrets in code examples or generated files unless they are clearly placeholders.
+- Treat `.env` files and `GEMINI_API_KEY` values as sensitive. Do not print, commit, copy, or expose them in logs, docs, tests, or screenshots.
 - Avoid adding tooling that uploads, transmits, or logs raw feed content from users.
 - Treat any existing user data, logs, or config as sensitive and remove only what is explicitly requested.
 - Prefer local-only operations; keep analysis and state handling aligned with the product's privacy-first posture.
