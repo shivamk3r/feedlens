@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { analyzePost, callGemini } from "../src/background/gemini";
+import { analyzePost, callGemini, validateGeminiApiKey } from "../src/background/gemini";
 import { DEFAULT_SETTINGS } from "../src/shared/defaults";
 import { saveApiKey, saveSettings } from "../src/shared/storage";
 import type { AnalysisResult, ExtractedPost } from "../src/shared/types";
@@ -53,7 +53,12 @@ describe("Gemini analysis service", () => {
     expect((init as RequestInit).headers).toMatchObject({ "x-goog-api-key": "secret-key" });
 
     const body = JSON.parse(String((init as RequestInit).body));
-    expect(body.generationConfig.responseFormat.text.mimeType).toBe("application/json");
+    expect(body.generationConfig.responseMimeType).toBe("application/json");
+    expect(body.generationConfig.responseSchema).toBeTruthy();
+    expect(JSON.stringify(body.generationConfig.responseSchema)).not.toContain(
+      "additionalProperties"
+    );
+    expect(body.generationConfig.responseFormat).toBeUndefined();
     expect(body.contents[0].parts[0].text).toContain("Analyze this visible LinkedIn post");
   });
 
@@ -86,6 +91,44 @@ describe("Gemini analysis service", () => {
     expect(response).toMatchObject({
       ok: false,
       error: { code: "invalid_response", retryable: true }
+    });
+  });
+
+  it("validates a Gemini key with a synthetic structured analysis request", async () => {
+    const fetchImpl = vi.fn<typeof fetch>(async () =>
+      Response.json({
+        candidates: [{ content: { parts: [{ text: JSON.stringify(validAnalysis) }] } }]
+      })
+    );
+
+    const response = await validateGeminiApiKey(" candidate-key ", fetchImpl);
+
+    expect(response).toMatchObject({ ok: true });
+    const [url, init] = fetchImpl.mock.calls[0] as [RequestInfo | URL, RequestInit];
+    expect(String(url)).toContain("/models/gemini-3.5-flash:generateContent");
+    expect(String(url)).not.toContain("candidate-key");
+    expect((init as RequestInit).headers).toMatchObject({ "x-goog-api-key": "candidate-key" });
+    expect(String((init as RequestInit).body)).toContain("Feed Lens connection check");
+  });
+
+  it("returns a sanitized failure when a Gemini key cannot be used", async () => {
+    const fetchImpl = vi.fn<typeof fetch>(async () =>
+      Response.json(
+        { error: { message: "raw provider detail that may include sensitive context" } },
+        { status: 403 }
+      )
+    );
+
+    const response = await validateGeminiApiKey("bad-key", fetchImpl);
+
+    expect(response).toMatchObject({
+      ok: false,
+      error: {
+        code: "provider_error",
+        message:
+          "Gemini could not use this API key. Check the key, billing status, project access, or rate limits.",
+        retryable: false
+      }
     });
   });
 });

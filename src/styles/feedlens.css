@@ -263,6 +263,15 @@ textarea {
   line-height: 1.45;
 }
 
+.fl-health {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--fl-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 .fl-notice {
   border: 1px solid #bfd3ee;
   border-radius: 8px;

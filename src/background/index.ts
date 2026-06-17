@@ -1,4 +1,5 @@
-import { analyzePost, clearCache } from "./gemini";
+import { analyzePost, clearCache, validateGeminiApiKey } from "./gemini";
+import { ERROR_MESSAGES } from "../shared/defaults";
 import {
   getSessionResults,
   getSetupStatus,
@@ -20,7 +21,7 @@ chrome.runtime.onMessage.addListener((message: BackgroundMessage, _sender, sendR
         ok: false,
         error: {
           code: "unknown",
-          message: error instanceof Error ? error.message : "Feed Lens hit an unexpected error.",
+          message: ERROR_MESSAGES.unexpected,
           retryable: true
         }
       });
@@ -36,6 +37,9 @@ async function handleMessage(message: BackgroundMessage): Promise<unknown> {
 
     case "feedlens:analyzePost":
       return analyzePost(message.payload);
+
+    case "feedlens:validateApiKey":
+      return validateGeminiApiKey(message.payload.apiKey);
 
     case "feedlens:clearCache":
       await clearCache();

@@ -10,9 +10,16 @@ import {
   putCacheEntry,
   putSessionResult
 } from "../shared/storage";
-import { PROMPT_VERSION, type AnalyzePostRequest, type AnalyzePostResponse } from "../shared/types";
+import {
+  PROMPT_VERSION,
+  type AnalyzePostRequest,
+  type AnalyzePostResponse,
+  type ValidateApiKeyResponse
+} from "../shared/types";
 
 const GEMINI_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models";
+const VALIDATION_POST_TEXT =
+  "Feed Lens connection check: A team shared a neutral project update with two specific results and no urgent claim.";
 
 interface GeminiGenerateContentResponse {
   candidates?: Array<{
@@ -124,6 +131,37 @@ export async function analyzePost({
 }
 
 export { clearCache };
+
+export async function validateGeminiApiKey(
+  apiKey: string,
+  fetchImpl: typeof fetch = fetch
+): Promise<ValidateApiKeyResponse> {
+  const trimmed = apiKey.trim();
+  if (!trimmed) {
+    return {
+      ok: false,
+      error: { code: "missing_api_key", message: ERROR_MESSAGES.missingApiKey, retryable: false }
+    };
+  }
+
+  try {
+    const settings = await getSettings();
+    await callGemini(VALIDATION_POST_TEXT, settings, trimmed, fetchImpl);
+    return { ok: true, checkedAt: new Date().toISOString() };
+  } catch (error) {
+    const normalized = normalizeGeminiError(error);
+    return {
+      ok: false,
+      error: {
+        ...normalized,
+        message:
+          normalized.code === "rate_limited"
+            ? normalized.message
+            : ERROR_MESSAGES.keyValidationFailed
+      }
+    };
+  }
+}
 
 export async function callGemini(
   postText: string,

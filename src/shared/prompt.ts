@@ -1,6 +1,8 @@
 import { analysisResponseSchema } from "./schema";
 import type { FeedLensSettings } from "./types";
 
+const geminiResponseSchema = stripUnsupportedGeminiSchema(analysisResponseSchema);
+
 export const SYSTEM_PROMPT = `You are Feed Lens, a careful assistant that analyzes LinkedIn post text for information quality, misinformation risk, and manipulation or persuasion signals.
 
 Rules:
@@ -49,12 +51,24 @@ export function buildGeminiRequestBody(postText: string, settings: FeedLensSetti
     generationConfig: {
       temperature: settings.temperature,
       maxOutputTokens: settings.maxOutputTokens,
-      responseFormat: {
-        text: {
-          mimeType: "application/json",
-          schema: analysisResponseSchema
-        }
-      }
+      responseMimeType: "application/json",
+      responseSchema: geminiResponseSchema
     }
   };
+}
+
+function stripUnsupportedGeminiSchema(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(stripUnsupportedGeminiSchema);
+  }
+
+  if (!value || typeof value !== "object") {
+    return value;
+  }
+
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter(([key]) => key !== "additionalProperties")
+      .map(([key, nested]) => [key, stripUnsupportedGeminiSchema(nested)])
+  );
 }

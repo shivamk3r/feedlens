@@ -1,5 +1,6 @@
 import { DEFAULT_SETTINGS } from "./defaults";
 import type {
+  ApiKeyHealth,
   AnalysisCacheEntry,
   FeedLensSettings,
   SessionResult,
@@ -9,6 +10,7 @@ import type {
 const SETTINGS_KEY = "feedlens.settings.v1";
 const LOCAL_API_KEY = "feedlens.geminiApiKey.local.v1";
 const SESSION_API_KEY = "feedlens.geminiApiKey.session.v1";
+const API_KEY_HEALTH_KEY = "feedlens.geminiApiHealth.local.v1";
 const CACHE_KEY = "feedlens.analysisCache.v1";
 const SESSION_RESULTS_KEY = "feedlens.sessionResults.v1";
 const SELECTED_HASH_KEY = "feedlens.selectedHash.v1";
@@ -46,14 +48,38 @@ export async function saveApiKey(apiKey: string): Promise<void> {
   }
 
   await chrome.storage.local.set({ [LOCAL_API_KEY]: trimmed });
+  await chrome.storage.local.remove(API_KEY_HEALTH_KEY);
   await chrome.storage.session.remove(SESSION_API_KEY);
 }
 
 export async function clearApiKey(): Promise<void> {
   await Promise.all([
     chrome.storage.local.remove(LOCAL_API_KEY),
+    chrome.storage.local.remove(API_KEY_HEALTH_KEY),
     chrome.storage.session.remove(SESSION_API_KEY)
   ]);
+}
+
+export async function getApiKeyHealth(): Promise<ApiKeyHealth | undefined> {
+  const stored = await chrome.storage.local.get(API_KEY_HEALTH_KEY);
+  const health = stored[API_KEY_HEALTH_KEY];
+  if (!isRecord(health)) {
+    return undefined;
+  }
+
+  return health.status === "valid" &&
+    typeof health.checkedAt === "string" &&
+    typeof health.model === "string"
+    ? {
+        status: "valid",
+        checkedAt: health.checkedAt,
+        model: health.model
+      }
+    : undefined;
+}
+
+export async function saveApiKeyHealth(health: ApiKeyHealth): Promise<void> {
+  await chrome.storage.local.set({ [API_KEY_HEALTH_KEY]: health });
 }
 
 export async function getCacheEntry(cacheKey: string): Promise<AnalysisCacheEntry | undefined> {

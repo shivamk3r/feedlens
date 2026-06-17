@@ -102,6 +102,12 @@ export interface SetupStatus {
   selectedHash?: string;
 }
 
+export interface ApiKeyHealth {
+  status: "valid";
+  checkedAt: string;
+  model: string;
+}
+
 export type FeedLensErrorCode =
   | "missing_api_key"
   | "privacy_not_accepted"
@@ -138,9 +144,22 @@ export interface AnalyzePostFailure {
 
 export type AnalyzePostResponse = AnalyzePostSuccess | AnalyzePostFailure;
 
+export interface ValidateApiKeySuccess {
+  ok: true;
+  checkedAt: string;
+}
+
+export interface ValidateApiKeyFailure {
+  ok: false;
+  error: FeedLensError;
+}
+
+export type ValidateApiKeyResponse = ValidateApiKeySuccess | ValidateApiKeyFailure;
+
 export type BackgroundMessage =
   | { type: "feedlens:getStatus" }
   | { type: "feedlens:analyzePost"; payload: AnalyzePostRequest }
+  | { type: "feedlens:validateApiKey"; payload: { apiKey: string } }
   | { type: "feedlens:clearCache" }
   | { type: "feedlens:getSessionResults" }
   | { type: "feedlens:hideResult"; payload: { hash: string } }

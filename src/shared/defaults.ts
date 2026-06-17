@@ -25,7 +25,10 @@ export const ERROR_MESSAGES = {
   disabled: "Feed Lens is paused. Resume analysis to scan visible posts.",
   providerError:
     "Gemini returned an error. Check your API key, billing status, or rate limits.",
+  keyValidationFailed:
+    "Gemini could not use this API key. Check the key, billing status, project access, or rate limits.",
   rateLimited: "Your Gemini rate limit was reached. Try fewer posts or wait before analyzing again.",
   invalidResponse: "Gemini returned an invalid response. Try again in a moment.",
-  noPosts: "No visible LinkedIn posts detected. Scroll to your feed and try again."
+  noPosts: "No visible LinkedIn posts detected. Scroll to your feed and try again.",
+  unexpected: "Feed Lens hit an unexpected error. Try again in a moment."
 } as const;

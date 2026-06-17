@@ -3,11 +3,13 @@ import { DEFAULT_SETTINGS } from "../src/shared/defaults";
 import {
   clearApiKey,
   getApiKey,
+  getApiKeyHealth,
   getCacheEntryCount,
   getSettings,
   hasApiKey,
   putCacheEntry,
   saveApiKey,
+  saveApiKeyHealth,
   saveSettings
 } from "../src/shared/storage";
 import type { AnalysisResult } from "../src/shared/types";
@@ -33,7 +35,18 @@ describe("extension storage helpers", () => {
 
   it("stores API keys in local storage by default and clears both key locations", async () => {
     await saveApiKey(" test-key ");
+    await saveApiKeyHealth({
+      status: "valid",
+      checkedAt: "2026-06-17T00:00:00.000Z",
+      model: DEFAULT_SETTINGS.model
+    });
+
     await expect(getApiKey(DEFAULT_SETTINGS)).resolves.toBe("test-key");
+    await expect(getApiKeyHealth()).resolves.toEqual({
+      status: "valid",
+      checkedAt: "2026-06-17T00:00:00.000Z",
+      model: DEFAULT_SETTINGS.model
+    });
     expect(getChromeMock().storage.local.data).toHaveProperty(
       "feedlens.geminiApiKey.local.v1",
       "test-key"
@@ -48,6 +61,7 @@ describe("extension storage helpers", () => {
 
     await clearApiKey();
     await expect(hasApiKey(DEFAULT_SETTINGS)).resolves.toBe(false);
+    await expect(getApiKeyHealth()).resolves.toBeUndefined();
     expect(getChromeMock().storage.session.data).not.toHaveProperty(
       "feedlens.geminiApiKey.session.v1"
     );

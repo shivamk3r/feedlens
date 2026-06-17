@@ -12,7 +12,9 @@ async function loadOptionsPage(): Promise<HTMLElement> {
 }
 
 async function settle(): Promise<void> {
-  await new Promise((resolve) => window.setTimeout(resolve, 0));
+  for (let index = 0; index < 3; index += 1) {
+    await new Promise((resolve) => window.setTimeout(resolve, 0));
+  }
 }
 
 describe("options page", () => {
@@ -25,10 +27,10 @@ describe("options page", () => {
     const text = root.textContent ?? "";
 
     expect(text).toContain("Gemini API key");
+    expect(text).toContain("Not configured");
     expect(text).toContain("Privacy notice");
     expect(text).toContain("Visible posts may be sent directly from this browser to Gemini");
 
-    expect(text).not.toContain("Current key status");
     expect(text).not.toContain(".env");
     expect(text).not.toContain("Key storage");
     expect(text).not.toContain("Gemini model");
@@ -40,7 +42,13 @@ describe("options page", () => {
     expect(text).not.toContain("Display");
   });
 
-  it("saves only the API key and privacy choice from the form", async () => {
+  it("validates the API key before saving the key and privacy choice", async () => {
+    const chromeMock = getChromeMock();
+    chromeMock.runtime.sendMessage.mockResolvedValue({
+      ok: true,
+      checkedAt: "2026-06-17T00:00:00.000Z"
+    });
+
     const root = await loadOptionsPage();
     const form = root.querySelector<HTMLFormElement>("#feedlens-settings-form")!;
     root.querySelector<HTMLInputElement>("#gemini-key")!.value = " test-key ";
@@ -49,13 +57,71 @@ describe("options page", () => {
     form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
     await settle();
 
+    expect(chromeMock.runtime.sendMessage).toHaveBeenCalledWith({
+      type: "feedlens:validateApiKey",
+      payload: { apiKey: "test-key" }
+    });
     expect(getChromeMock().storage.local.data).toHaveProperty(
       "feedlens.geminiApiKey.local.v1",
       "test-key"
+    );
+    expect(getChromeMock().storage.local.data).toHaveProperty(
+      "feedlens.geminiApiHealth.local.v1",
+      {
+        status: "valid",
+        checkedAt: "2026-06-17T00:00:00.000Z",
+        model: DEFAULT_SETTINGS.model
+      }
     );
     await expect(getSettings()).resolves.toEqual({
       ...DEFAULT_SETTINGS,
       privacyAccepted: true
     });
+    expect(root.textContent).toContain("Ready");
+  });
+
+  it("does not save an API key when Gemini validation fails", async () => {
+    const chromeMock = getChromeMock();
+    chromeMock.runtime.sendMessage.mockResolvedValue({
+      ok: false,
+      error: {
+        code: "provider_error",
+        message: "Gemini could not use this API key.",
+        retryable: false
+      }
+    });
+
+    const root = await loadOptionsPage();
+    const form = root.querySelector<HTMLFormElement>("#feedlens-settings-form")!;
+    root.querySelector<HTMLInputElement>("#gemini-key")!.value = " bad-key ";
+    root.querySelector<HTMLInputElement>('input[name="privacyAccepted"]')!.checked = true;
+
+    form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    await settle();
+
+    expect(getChromeMock().storage.local.data).not.toHaveProperty(
+      "feedlens.geminiApiKey.local.v1"
+    );
+    await expect(getSettings()).resolves.toEqual(DEFAULT_SETTINGS);
+    expect(root.textContent).toContain("Check failed");
+    expect(root.textContent).toContain("Gemini key was not saved.");
+  });
+
+  it("does not save an API key when the validation request fails", async () => {
+    const chromeMock = getChromeMock();
+    chromeMock.runtime.sendMessage.mockRejectedValue(new Error("background unavailable"));
+
+    const root = await loadOptionsPage();
+    const form = root.querySelector<HTMLFormElement>("#feedlens-settings-form")!;
+    root.querySelector<HTMLInputElement>("#gemini-key")!.value = " candidate-key ";
+
+    form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    await settle();
+
+    expect(getChromeMock().storage.local.data).not.toHaveProperty(
+      "feedlens.geminiApiKey.local.v1"
+    );
+    expect(root.textContent).toContain("Check failed");
+    expect(root.textContent).toContain("Gemini key check did not complete.");
   });
 });
