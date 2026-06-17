@@ -2,6 +2,8 @@ import { createPostHash } from "../shared/hash";
 import type { ExtractedPost } from "../shared/types";
 
 const POST_SELECTORS = [
+  "[data-testid='mainFeed'] [role='listitem']",
+  "[data-sdui-screen*='feed.MainFeed'] [role='listitem']",
   "div.feed-shared-update-v2",
   "article[data-urn]",
   "div[data-urn*='urn:li:activity']",
@@ -16,6 +18,7 @@ const REMOVE_SELECTORS = [
   ".social-details-social-counts",
   ".comments-comment-item",
   ".comments-comments-list",
+  "[data-testid*='comment' i]",
   ".update-components-actor__name",
   ".feed-shared-actor__name",
   ".update-components-actor__meta-link",
@@ -30,7 +33,15 @@ const REMOVE_SELECTORS = [
   "svg",
   "img",
   "video",
+  "[data-vjs-player]",
+  ".video-js",
+  "[class*='vjs-']",
   "[role='button']",
+  "[role='menu']",
+  "[role='menuitem']",
+  "[role='menuitemradio']",
+  "[role='slider']",
+  "[role='dialog']",
   "[aria-hidden='true']"
 ].join(",");
 

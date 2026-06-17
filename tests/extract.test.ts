@@ -72,4 +72,42 @@ describe("LinkedIn post extraction", () => {
     expect(entries[0]?.post.author).toBe("Asha Builder");
     expect(entries[0]?.post.url).toBe("https://www.linkedin.com/feed/update/urn:li:activity:123");
   });
+
+  it("detects posts in LinkedIn's SDUI main feed listitem layout", async () => {
+    document.body.innerHTML = `
+      <div data-sdui-screen="com.linkedin.sdui.flagshipnav.feed.MainFeed">
+        <div data-testid="mainFeed" role="list">
+          <div>
+            <div role="listitem">
+              <a href="/in/someone">Author Name</a>
+              <div>
+                This is the current LinkedIn feed layout where each post card is exposed
+                as a list item inside the main feed rather than the older feed-shared
+                update container.
+              </div>
+              <div role="button">Like</div>
+              <div role="button">Comment</div>
+              <div data-testid="commentList123">A visible comment should not become post text.</div>
+              <div class="video-js">
+                <span class="vjs-control-text">Play Video</span>
+                <span class="vjs-duration-display">0:30</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const post = document.querySelector<HTMLElement>("[role='listitem']");
+    expect(post).toBeTruthy();
+    visible(post as HTMLElement);
+
+    const entries = await getVisiblePostEntries({ maxPosts: 5 });
+    expect(entries).toHaveLength(1);
+    expect(entries[0]?.post.postId).toMatch(/^feedlens:/);
+    expect(entries[0]?.post.text).toContain("current LinkedIn feed layout");
+    expect(entries[0]?.post.text).not.toContain("Like");
+    expect(entries[0]?.post.text).not.toContain("visible comment");
+    expect(entries[0]?.post.text).not.toContain("Play Video");
+  });
 });
