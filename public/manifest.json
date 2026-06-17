@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "FeedLens",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Privacy-first information-quality and manipulation-risk signals for visible LinkedIn feed posts.",
   "action": {
     "default_title": "FeedLens",
