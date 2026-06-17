@@ -27,5 +27,8 @@
     "rimraf": "^6.1.2",
     "typescript": "^5.9.3",
     "vitest": "^4.0.15"
+  },
+  "dependencies": {
+    "lucide": "^1.20.0"
   }
 }

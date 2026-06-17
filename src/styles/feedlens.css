@@ -111,6 +111,77 @@ textarea {
   gap: 8px;
 }
 
+.fl-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  color: var(--fl-muted);
+  font-size: 12px;
+}
+
+.fl-result--selected {
+  border-color: #9fbae4;
+  box-shadow: inset 3px 0 0 var(--fl-blue);
+}
+
+.fl-result__snippet {
+  color: var(--fl-text);
+  font-weight: 650;
+}
+
+.fl-score-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.fl-score {
+  display: grid;
+  gap: 4px;
+  color: var(--fl-muted);
+  font-size: 12px;
+}
+
+.fl-score strong {
+  color: var(--fl-text);
+  font-size: 18px;
+}
+
+.fl-score__bar {
+  overflow: hidden;
+  height: 5px;
+  border-radius: 999px;
+  background: #e6ece8;
+}
+
+.fl-score__bar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--fl-blue);
+}
+
+.fl-signal-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 18px;
+  color: #334038;
+  line-height: 1.45;
+}
+
+.fl-signal-list span {
+  color: var(--fl-muted);
+  font-size: 12px;
+}
+
+.fl-result__detail {
+  display: grid;
+  gap: 6px;
+  border-top: 1px solid var(--fl-border);
+  padding-top: 10px;
+}
+
 .fl-button {
   display: inline-flex;
   min-height: 34px;
