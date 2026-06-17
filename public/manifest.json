@@ -1,0 +1,34 @@
+{
+  "manifest_version": 3,
+  "name": "Feed Lens",
+  "version": "0.1.0",
+  "description": "Privacy-first information-quality and manipulation-risk signals for visible LinkedIn feed posts.",
+  "action": {
+    "default_title": "Feed Lens",
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "assets/background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.linkedin.com/*"],
+      "js": ["assets/content.js"],
+      "css": ["assets/feedlens.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "permissions": ["activeTab", "sidePanel", "storage"],
+  "host_permissions": [
+    "https://www.linkedin.com/*",
+    "https://generativelanguage.googleapis.com/*"
+  ]
+}

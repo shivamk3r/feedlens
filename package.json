@@ -1,0 +1,31 @@
+{
+  "name": "feed-lens",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Privacy-first Chrome extension for LinkedIn information-quality and manipulation-risk signals.",
+  "type": "module",
+  "scripts": {
+    "clean": "rimraf dist coverage",
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "verify": "npm run typecheck && npm run test && npm run build"
+  },
+  "keywords": [
+    "chrome-extension",
+    "linkedin",
+    "gemini",
+    "privacy"
+  ],
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "@types/chrome": "^0.0.326",
+    "@types/node": "^24.10.1",
+    "esbuild": "^0.28.1",
+    "jsdom": "^27.3.0",
+    "rimraf": "^6.1.2",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.15"
+  }
+}

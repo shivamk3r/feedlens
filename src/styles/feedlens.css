@@ -1,0 +1,275 @@
+:root {
+  color-scheme: light;
+  --fl-bg: #fafafa;
+  --fl-surface: #ffffff;
+  --fl-text: #17201b;
+  --fl-muted: #607067;
+  --fl-border: #d9e1dc;
+  --fl-green: #248456;
+  --fl-green-bg: #e8f5ee;
+  --fl-yellow: #9b6a00;
+  --fl-yellow-bg: #fff3cd;
+  --fl-red: #bf3d3d;
+  --fl-red-bg: #fdeaea;
+  --fl-blue: #1f6feb;
+  --fl-blue-bg: #eaf2ff;
+  --fl-shadow: 0 10px 30px rgba(22, 32, 27, 0.12);
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+}
+
+body.feedlens-app {
+  min-width: 360px;
+  margin: 0;
+  background: var(--fl-bg);
+  color: var(--fl-text);
+  font-size: 14px;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.fl-shell {
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+}
+
+.fl-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid var(--fl-border);
+  background: var(--fl-surface);
+  padding: 16px;
+}
+
+.fl-brand {
+  display: grid;
+  gap: 2px;
+}
+
+.fl-brand__name {
+  font-size: 18px;
+  font-weight: 760;
+  letter-spacing: 0;
+}
+
+.fl-brand__tagline {
+  color: var(--fl-muted);
+  font-size: 12px;
+}
+
+.fl-main {
+  display: grid;
+  gap: 16px;
+  padding: 16px;
+}
+
+.fl-section {
+  display: grid;
+  gap: 12px;
+}
+
+.fl-card {
+  display: grid;
+  gap: 12px;
+  border: 1px solid var(--fl-border);
+  border-radius: 8px;
+  background: var(--fl-surface);
+  padding: 14px;
+}
+
+.fl-card h2,
+.fl-card h3 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.fl-card p {
+  margin: 0;
+  color: var(--fl-muted);
+  line-height: 1.45;
+}
+
+.fl-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.fl-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.fl-button {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid var(--fl-border);
+  border-radius: 8px;
+  background: var(--fl-surface);
+  color: var(--fl-text);
+  cursor: pointer;
+  padding: 7px 10px;
+  text-decoration: none;
+}
+
+.fl-button:hover {
+  border-color: #b7c4bd;
+  background: #f5f8f6;
+}
+
+.fl-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.fl-button--primary {
+  border-color: var(--fl-blue);
+  background: var(--fl-blue);
+  color: #ffffff;
+}
+
+.fl-button--primary:hover {
+  background: #195fc9;
+}
+
+.fl-button--danger {
+  border-color: #e2b5b5;
+  color: var(--fl-red);
+}
+
+.fl-button svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+}
+
+.fl-input,
+.fl-select,
+.fl-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--fl-border);
+  border-radius: 8px;
+  background: var(--fl-surface);
+  color: var(--fl-text);
+  padding: 9px 10px;
+}
+
+.fl-textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.fl-field {
+  display: grid;
+  gap: 6px;
+}
+
+.fl-field label,
+.fl-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #334038;
+}
+
+.fl-help {
+  color: var(--fl-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.fl-notice {
+  border: 1px solid #bfd3ee;
+  border-radius: 8px;
+  background: var(--fl-blue-bg);
+  color: #24435f;
+  padding: 12px;
+  line-height: 1.45;
+}
+
+.fl-warning {
+  border: 1px solid #ebd690;
+  border-radius: 8px;
+  background: var(--fl-yellow-bg);
+  color: #5b430b;
+  padding: 12px;
+  line-height: 1.45;
+}
+
+.fl-error {
+  border: 1px solid #e4b1b1;
+  border-radius: 8px;
+  background: var(--fl-red-bg);
+  color: #7f2727;
+  padding: 12px;
+  line-height: 1.45;
+}
+
+.fl-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 4px 9px;
+  font-size: 12px;
+  font-weight: 760;
+}
+
+.fl-badge--green {
+  background: var(--fl-green-bg);
+  color: var(--fl-green);
+}
+
+.fl-badge--yellow {
+  background: var(--fl-yellow-bg);
+  color: var(--fl-yellow);
+}
+
+.fl-badge--red {
+  background: var(--fl-red-bg);
+  color: var(--fl-red);
+}
+
+.fl-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fl-switch input {
+  width: 18px;
+  height: 18px;
+}
+
+.fl-grid-2 {
+  display: grid;
+  gap: 12px;
+}
+
+@media (min-width: 720px) {
+  body.feedlens-options {
+    min-width: 0;
+  }
+
+  .fl-options-layout {
+    grid-template-columns: minmax(280px, 420px) minmax(320px, 1fr);
+    align-items: start;
+  }
+
+  .fl-grid-2 {
+    grid-template-columns: 1fr 1fr;
+  }
+}
