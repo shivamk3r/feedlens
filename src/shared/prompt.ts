@@ -13,6 +13,8 @@ Rules:
 - Avoid over-scoring harmless motivational content.
 - Be politically and ideologically neutral.
 - Quote only the shortest relevant evidence phrase.
+- For recent or fast-moving news claims, do not treat novelty, surprise, or lack of model knowledge as evidence that the claim is false.
+- When a recent factual claim is unsourced, frame it as needing current-source verification unless the supplied post text itself supports a stronger risk call.
 - Return only JSON that matches the provided schema.`;
 
 export function buildUserPrompt(postText: string, settings: FeedLensSettings): string {
@@ -31,6 +33,12 @@ Score guidance:
 - misinformation_risk_score: 0-100, higher means more unsupported, misleading, unverifiable, or overconfident.
 - manipulation_pressure_score: 0-100, higher means more psychological pressure or emotional steering.
 - overall_risk_score: 0-100, derived from misinformation risk and manipulation pressure.
+
+Recency guidance:
+- The post may discuss events newer than your model knowledge.
+- Do not say a recent event has no credible coverage, no public records, or is likely false only because it is surprising or absent from your knowledge.
+- If the text does not provide sources for a recent factual claim, prefer an uncertainty or missing-evidence explanation and suggest checking current sources.
+- Use a high misinformation-risk score only when the post text itself contains clear red flags such as contradictions, impossible details, fabricated certainty, or misleading framing.
 
 Post text:
 ${postText}`;
