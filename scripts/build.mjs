@@ -54,12 +54,6 @@ const builds = [
     entryPoints: [path.join(root, "src/options/index.ts")],
     outfile: path.join(assetDir, "options.js"),
     format: "iife"
-  },
-  {
-    ...common,
-    entryPoints: [path.join(root, "src/sidepanel/index.ts")],
-    outfile: path.join(assetDir, "sidepanel.js"),
-    format: "iife"
   }
 ];
 
@@ -77,7 +71,6 @@ await Promise.all(builds.map((options) => esbuild.build(options)));
 await Promise.all([
   copyFile(path.join(root, "src/popup/popup.html"), path.join(distDir, "popup.html")),
   copyFile(path.join(root, "src/options/options.html"), path.join(distDir, "options.html")),
-  copyFile(path.join(root, "src/sidepanel/sidepanel.html"), path.join(distDir, "sidepanel.html")),
   copyFile(path.join(root, "src/styles/feedlens.css"), path.join(assetDir, "feedlens.css"))
 ]);
 

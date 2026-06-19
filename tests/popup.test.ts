@@ -8,8 +8,7 @@ const setupStatus = {
     privacyAccepted: true
   },
   hasApiKey: true,
-  cacheEntryCount: 0,
-  sessionResultCount: 0
+  cacheEntryCount: 0
 };
 
 const contentState = {
@@ -47,6 +46,12 @@ describe("popup debug entry", () => {
 
   it("shows and opens debug logs in development/test builds", async () => {
     const root = await loadPopup();
+
+    expect(root.querySelector("#feedlens-sidepanel")).toBeNull();
+    expect(root.textContent).not.toContain("Details");
+    expect(root.querySelector("#feedlens-analyze")).toBeTruthy();
+    expect(root.querySelector("#feedlens-clear")).toBeTruthy();
+    expect(root.querySelector("#feedlens-options")).toBeTruthy();
 
     const debugButton = root.querySelector<HTMLButtonElement>("#feedlens-debug");
     expect(debugButton).toBeTruthy();

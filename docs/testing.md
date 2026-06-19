@@ -51,11 +51,9 @@ CLAUDE.md -> AGENTS.md
 8. Open `https://www.linkedin.com/feed/`.
 9. Open the FeedLens popup and click Analyze visible.
 10. Confirm visible posts receive calm green/yellow/red markers.
-11. Click a marker and confirm the inline detail opens.
-12. Open the side panel and confirm session results appear.
-13. Test copy, hide, useful/not useful, and re-analyze.
-14. Pause FeedLens from the popup and confirm no new automatic analysis runs.
-15. Clear markers from the popup.
+11. Click the Lens marker and confirm inline details open with scores, signals, counter-reading, and suggested action.
+12. Pause FeedLens from the popup and confirm no new automatic analysis runs.
+13. Clear markers from the popup.
 
 Repeat the visible-post flow on:
 
@@ -74,11 +72,11 @@ Confirm unsupported X routes such as search, messages, notifications, and indivi
 - Confirm content script code does not read `chrome.storage` keys directly.
 - Confirm local cache entries are keyed by hash/model/prompt version and do not store full raw post text.
 - Confirm Gemini keys are stored only in `chrome.storage.local`.
-- Confirm the side panel result list is session-only.
+- Confirm inline details do not expose raw post text beyond short evidence already returned by the analysis result.
 
 ## Known MVP Limits
 
 - LinkedIn and X DOM selectors may need maintenance as platform markup changes.
-- The side panel can re-analyze only posts still known to the active content script.
+- Per-post copy, feedback, hide, and re-analysis controls are not part of the current inline-only MVP.
 - Results are model assessments, not definitive fact checks.
 - No provider other than Gemini is implemented.

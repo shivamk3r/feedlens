@@ -126,7 +126,7 @@ async function refreshStatus(): Promise<void> {
     privacyAccepted: status.settings.privacyAccepted,
     hasApiKey,
     cacheEntryCount: status.cacheEntryCount,
-    sessionResultCount: status.sessionResultCount
+    backgroundAnalysis: status.settings.backgroundAnalysis
   });
 }
 
@@ -265,10 +265,7 @@ async function analyzeVisiblePost(
       host: element,
       result: response.result,
       source: response.source,
-      settings,
-      onSelect: () => {
-        void sendBackgroundMessage({ type: "feedlens:selectResult", payload: { hash: post.hash } });
-      }
+      settings
     });
     visiblePosts.set(post.hash, { element, post, status: "analyzed" });
     lastError = undefined;

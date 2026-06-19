@@ -3,7 +3,6 @@ import type {
   ApiKeyHealth,
   AnalysisCacheEntry,
   FeedLensSettings,
-  SessionResult,
   SetupStatus
 } from "./types";
 
@@ -12,10 +11,7 @@ const LOCAL_API_KEY = "feedlens.geminiApiKey.local.v1";
 const SESSION_API_KEY = "feedlens.geminiApiKey.session.v1";
 const API_KEY_HEALTH_KEY = "feedlens.geminiApiHealth.local.v1";
 const CACHE_KEY = "feedlens.analysisCache.v1";
-const SESSION_RESULTS_KEY = "feedlens.sessionResults.v1";
-const SELECTED_HASH_KEY = "feedlens.selectedHash.v1";
 const MAX_CACHE_ENTRIES = 250;
-const MAX_SESSION_RESULTS = 80;
 
 type StorageArea = chrome.storage.StorageArea;
 
@@ -108,69 +104,17 @@ export async function getCacheEntryCount(): Promise<number> {
   return Object.keys(await getCache()).length;
 }
 
-export async function putSessionResult(result: SessionResult): Promise<void> {
-  const results = await getSessionResultsMap();
-  results[result.hash] = result;
-
-  const pruned = Object.fromEntries(
-    Object.entries(results)
-      .sort(([, a], [, b]) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
-      .slice(0, MAX_SESSION_RESULTS)
-  );
-
-  await chrome.storage.session.set({ [SESSION_RESULTS_KEY]: pruned });
-}
-
-export async function getSessionResults(): Promise<SessionResult[]> {
-  return Object.values(await getSessionResultsMap())
-    .filter((result) => !result.hidden)
-    .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
-}
-
-export async function hideSessionResult(hash: string): Promise<void> {
-  const results = await getSessionResultsMap();
-  if (results[hash]) {
-    results[hash] = { ...results[hash], hidden: true };
-    await chrome.storage.session.set({ [SESSION_RESULTS_KEY]: results });
-  }
-}
-
-export async function setSessionResultFeedback(
-  hash: string,
-  feedback: SessionResult["feedback"]
-): Promise<void> {
-  const results = await getSessionResultsMap();
-  if (results[hash]) {
-    results[hash] = { ...results[hash], feedback };
-    await chrome.storage.session.set({ [SESSION_RESULTS_KEY]: results });
-  }
-}
-
-export async function selectResult(hash: string): Promise<void> {
-  await chrome.storage.session.set({ [SELECTED_HASH_KEY]: hash });
-}
-
-export async function getSelectedHash(): Promise<string | undefined> {
-  const stored = await chrome.storage.session.get(SELECTED_HASH_KEY);
-  const selected = stored[SELECTED_HASH_KEY];
-  return typeof selected === "string" ? selected : undefined;
-}
-
 export async function getSetupStatus(): Promise<SetupStatus> {
   const settings = await getSettings();
-  const [apiKeyExists, cacheEntryCount, sessionResultCount, selectedHash] = await Promise.all([
+  const [apiKeyExists, cacheEntryCount] = await Promise.all([
     hasApiKey(settings),
-    getCacheEntryCount(),
-    getSessionResults().then((results) => results.length),
-    getSelectedHash()
+    getCacheEntryCount()
   ]);
 
   return {
     settings,
     hasApiKey: apiKeyExists,
-    cacheEntryCount,
-    sessionResultCount,
-    selectedHash
+    cacheEntryCount
   };
 }
 
@@ -194,17 +138,13 @@ export function normalizeSettings(value: unknown): FeedLensSettings {
     storeCache: DEFAULT_SETTINGS.storeCache,
     highlightIntensity: DEFAULT_SETTINGS.highlightIntensity,
     sensitivity: DEFAULT_SETTINGS.sensitivity,
-    uiMode: DEFAULT_SETTINGS.uiMode,
+    uiMode: uiModeOr(record.uiMode, DEFAULT_SETTINGS.uiMode),
     maxVisiblePostsPerRun: DEFAULT_SETTINGS.maxVisiblePostsPerRun
   };
 }
 
 async function getCache(): Promise<Record<string, AnalysisCacheEntry>> {
   return getRecordMap(chrome.storage.local, CACHE_KEY);
-}
-
-async function getSessionResultsMap(): Promise<Record<string, SessionResult>> {
-  return getRecordMap(chrome.storage.session, SESSION_RESULTS_KEY);
 }
 
 async function getRecordMap<T>(area: StorageArea, key: string): Promise<Record<string, T>> {
@@ -219,6 +159,10 @@ function booleanOr(value: unknown, fallback: boolean): boolean {
 
 function numberOr(value: unknown, fallback: number): number {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+function uiModeOr(value: unknown, fallback: FeedLensSettings["uiMode"]): FeedLensSettings["uiMode"] {
+  return value === "feed_highlights" || value === "marker_only" ? value : fallback;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

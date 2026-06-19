@@ -14,5 +14,7 @@ describe("extension build modes", () => {
     execFileSync(process.execPath, ["scripts/build.mjs"], { stdio: "pipe" });
     expect(existsSync("dist/debug.html")).toBe(false);
     expect(existsSync("dist/assets/debug.js")).toBe(false);
+    expect(existsSync("dist/sidepanel.html")).toBe(false);
+    expect(existsSync("dist/assets/sidepanel.js")).toBe(false);
   });
 });

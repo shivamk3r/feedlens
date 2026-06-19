@@ -55,7 +55,7 @@ export type StorageMode = "session" | "local";
 export type AnalysisDepth = "fast" | "balanced" | "deep";
 export type HighlightIntensity = "subtle" | "standard" | "strong";
 export type Sensitivity = "conservative" | "balanced" | "strict";
-export type UiMode = "feed_highlights" | "marker_only" | "side_panel_only" | "both";
+export type UiMode = "feed_highlights" | "marker_only";
 
 export interface FeedLensSettings {
   enabled: boolean;
@@ -82,22 +82,6 @@ export interface AnalysisCacheEntry {
   promptVersion: string;
 }
 
-export interface SessionResult {
-  platform: SupportedPlatformId;
-  hash: string;
-  postId: string;
-  snippet: string;
-  author?: string;
-  url?: string;
-  result: AnalysisResult;
-  createdAt: string;
-  model: string;
-  promptVersion: string;
-  source: "cache" | "gemini";
-  feedback?: "useful" | "not_useful";
-  hidden?: boolean;
-}
-
 export type DebugLogSource = "content" | "background" | "gemini" | "popup" | "debug";
 export type DebugLogSeverity = "debug" | "info" | "warn" | "error";
 export type DebugLogPayload = Record<string, string | number | boolean>;
@@ -122,8 +106,6 @@ export interface SetupStatus {
   settings: FeedLensSettings;
   hasApiKey: boolean;
   cacheEntryCount: number;
-  sessionResultCount: number;
-  selectedHash?: string;
 }
 
 export interface ApiKeyHealth {
@@ -185,10 +167,6 @@ export type BackgroundMessage =
   | { type: "feedlens:analyzePost"; payload: AnalyzePostRequest }
   | { type: "feedlens:validateApiKey"; payload: { apiKey: string } }
   | { type: "feedlens:clearCache" }
-  | { type: "feedlens:getSessionResults" }
-  | { type: "feedlens:hideResult"; payload: { hash: string } }
-  | { type: "feedlens:setFeedback"; payload: { hash: string; feedback: "useful" | "not_useful" } }
-  | { type: "feedlens:selectResult"; payload: { hash: string } }
   | { type: "feedlens:getDebugLogs" }
   | { type: "feedlens:clearDebugLogs" }
   | { type: "feedlens:appendDebugLog"; payload: AppendDebugLogRequest };

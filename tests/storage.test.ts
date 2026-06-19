@@ -89,14 +89,32 @@ describe("extension storage helpers", () => {
       storeCache: false,
       highlightIntensity: "strong",
       sensitivity: "strict",
-      uiMode: "side_panel_only",
+      uiMode: "marker_only",
       maxVisiblePostsPerRun: 20
     });
 
     expect(settings).toEqual({
       ...DEFAULT_SETTINGS,
       enabled: false,
-      privacyAccepted: true
+      privacyAccepted: true,
+      uiMode: "marker_only"
+    });
+  });
+
+  it("normalizes legacy side-panel UI modes to inline feed highlights", async () => {
+    await getChromeMock().storage.local.set({
+      "feedlens.settings.v1": {
+        ...DEFAULT_SETTINGS,
+        privacyAccepted: true,
+        privacyNoticeVersion: 2,
+        uiMode: "side_panel_only"
+      }
+    });
+
+    await expect(getSettings()).resolves.toEqual({
+      ...DEFAULT_SETTINGS,
+      privacyAccepted: true,
+      uiMode: "feed_highlights"
     });
   });
 

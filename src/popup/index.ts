@@ -68,9 +68,6 @@ async function render(state: PopupState = {}): Promise<void> {
           <button class="fl-button" id="feedlens-clear" ${!supportedPlatformOpen ? "disabled" : ""}>
             <i data-lucide="trash-2"></i>Clear markers
           </button>
-          <button class="fl-button" id="feedlens-sidepanel">
-            <i data-lucide="panel-right-open"></i>Details
-          </button>
           <button class="fl-button" id="feedlens-options">
             <i data-lucide="settings"></i>Settings
           </button>
@@ -87,7 +84,7 @@ async function render(state: PopupState = {}): Promise<void> {
         <h2>Local state</h2>
         <div class="fl-stats">
           <span>Cache: ${status.cacheEntryCount}</span>
-          <span>Session results: ${status.sessionResultCount}</span>
+          <span>Inline details: Lens button</span>
         </div>
       </div>
     </section>
@@ -129,10 +126,6 @@ function bindActions(status: SetupStatus, page?: ContentState): void {
     void chrome.tabs.create({ url: chrome.runtime.getURL("debug.html") });
   });
 
-  root?.querySelector("#feedlens-sidepanel")?.addEventListener("click", () => {
-    void openSidePanel();
-  });
-
   root?.querySelector("#feedlens-toggle")?.addEventListener("click", async () => {
     const nextEnabled = !(!status.settings.enabled || page?.paused);
     await saveSettings({ enabled: !nextEnabled });
@@ -159,13 +152,6 @@ function bindActions(status: SetupStatus, page?: ContentState): void {
     }).catch(() => page);
     await render({ page: updatedPage, notice: "Visible FeedLens markers were cleared." });
   });
-}
-
-async function openSidePanel(): Promise<void> {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (tab?.windowId !== undefined) {
-    await chrome.sidePanel.open({ windowId: tab.windowId });
-  }
 }
 
 export {};

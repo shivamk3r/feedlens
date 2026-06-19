@@ -1,0 +1,108 @@
+import { describe, expect, it, vi } from "vitest";
+import { renderMarker } from "../src/content/render";
+import { DEFAULT_SETTINGS } from "../src/shared/defaults";
+import type { AnalysisResult, FeedLensSettings } from "../src/shared/types";
+
+const result: AnalysisResult = {
+  marker: "red",
+  confidence: "medium",
+  information_quality_score: 28,
+  misinformation_risk_score: 76,
+  manipulation_pressure_score: 82,
+  overall_risk_score: 79,
+  summary: "This post relies on urgency and unsupported broad claims.",
+  signals: [
+    {
+      type: "artificial_urgency",
+      severity: "high",
+      evidence: "act now",
+      explanation: "The phrase pushes immediate action without support."
+    },
+    {
+      type: "missing_evidence",
+      severity: "medium",
+      evidence: "top performers",
+      explanation: "The claim uses vague authority without specific evidence."
+    }
+  ],
+  counter_reading: "It could be promotional shorthand rather than deliberate pressure.",
+  suggested_user_action: "Read critically and look for evidence."
+};
+
+function settings(patch: Partial<FeedLensSettings> = {}): FeedLensSettings {
+  return {
+    ...DEFAULT_SETTINGS,
+    privacyAccepted: true,
+    ...patch
+  };
+}
+
+describe("content marker rendering", () => {
+  it("renders a post bezel with an accessible icon-only Lens details button", () => {
+    const host = document.createElement("article");
+
+    renderMarker({ host, result, source: "gemini", settings: settings() });
+
+    expect(host.classList.contains("feedlens-post")).toBe(true);
+    expect(host.classList.contains("feedlens-post--red")).toBe(true);
+    expect(host.classList.contains("feedlens-post--standard")).toBe(true);
+    expect(host.dataset.feedlensMarker).toBe("red");
+
+    const marker = host.querySelector<HTMLElement>(":scope > .feedlens-marker");
+    const button = marker?.querySelector<HTMLButtonElement>(".feedlens-marker__button");
+    const detail = marker?.querySelector<HTMLElement>(".feedlens-detail");
+
+    expect(marker).toBeTruthy();
+    expect(button).toBeTruthy();
+    expect(button?.textContent?.trim()).toBe("");
+    expect(button?.getAttribute("aria-label")).toBe("Show FeedLens details");
+    expect(button?.getAttribute("aria-expanded")).toBe("false");
+    expect(button?.querySelector("svg")).toBeTruthy();
+    expect(detail?.hidden).toBe(true);
+    expect(detail?.textContent).toContain("High risk");
+    expect(detail?.textContent).toContain("medium confidence - gemini");
+    expect(detail?.textContent).toContain("Overall risk 79");
+    expect(detail?.textContent).toContain("act now");
+    expect(detail?.textContent).toContain("Suggested action");
+  });
+
+  it("toggles the inline Lens details without selecting a side panel result", () => {
+    const host = document.createElement("article");
+    const sendMessage = vi.spyOn(chrome.runtime, "sendMessage");
+
+    renderMarker({ host, result, source: "cache", settings: settings() });
+
+    const button = host.querySelector<HTMLButtonElement>(".feedlens-marker__button");
+    const detail = host.querySelector<HTMLElement>(".feedlens-detail");
+    expect(button).toBeTruthy();
+    expect(detail).toBeTruthy();
+
+    button?.click();
+    expect(detail?.hidden).toBe(false);
+    expect(button?.getAttribute("aria-expanded")).toBe("true");
+    expect(button?.getAttribute("aria-label")).toBe("Hide FeedLens details");
+
+    button?.click();
+    expect(detail?.hidden).toBe(true);
+    expect(button?.getAttribute("aria-expanded")).toBe("false");
+    expect(button?.getAttribute("aria-label")).toBe("Show FeedLens details");
+    expect(sendMessage).not.toHaveBeenCalledWith(
+      expect.objectContaining({ type: "feedlens:selectResult" })
+    );
+  });
+
+  it("preserves marker-only mode on the host for legacy UI handling", () => {
+    const host = document.createElement("article");
+
+    renderMarker({
+      host,
+      result,
+      source: "gemini",
+      settings: settings({ uiMode: "marker_only", highlightIntensity: "subtle" })
+    });
+
+    expect(host.classList.contains("feedlens-post--marker-only")).toBe(true);
+    expect(host.classList.contains("feedlens-post--subtle")).toBe(true);
+    expect(host.querySelector(".feedlens-marker__button")).toBeTruthy();
+  });
+});

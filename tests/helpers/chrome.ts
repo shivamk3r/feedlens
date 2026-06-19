@@ -48,10 +48,6 @@ export interface ChromeMock {
     onInstalled: { addListener: ReturnType<typeof vi.fn> };
     onMessage: { addListener: ReturnType<typeof vi.fn> };
   };
-  sidePanel: {
-    setPanelBehavior: ReturnType<typeof vi.fn>;
-    open: ReturnType<typeof vi.fn>;
-  };
   storage: {
     local: MemoryStorageArea;
     session: MemoryStorageArea;
@@ -72,10 +68,6 @@ export function createChromeMock(): ChromeMock {
       sendMessage: vi.fn(async () => undefined),
       onInstalled: { addListener: vi.fn() },
       onMessage: { addListener: vi.fn() }
-    },
-    sidePanel: {
-      setPanelBehavior: vi.fn(async () => undefined),
-      open: vi.fn(async () => undefined)
     },
     storage: {
       local: new MemoryStorageArea(),

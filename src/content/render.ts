@@ -1,3 +1,4 @@
+import { hydrateIcons } from "../shared/icons";
 import type { AnalysisResult, FeedLensSettings } from "../shared/types";
 
 interface RenderMarkerOptions {
@@ -5,16 +6,12 @@ interface RenderMarkerOptions {
   result: AnalysisResult;
   source: "cache" | "gemini";
   settings: FeedLensSettings;
-  onSelect: () => void;
 }
 
-export function renderMarker({ host, result, source, settings, onSelect }: RenderMarkerOptions): void {
+let detailIdCounter = 0;
+
+export function renderMarker({ host, result, source, settings }: RenderMarkerOptions): void {
   clearMarker(host);
-
-  if (settings.uiMode === "side_panel_only") {
-    return;
-  }
-
   host.classList.add("feedlens-post");
   host.classList.add(`feedlens-post--${result.marker}`);
   host.classList.add(`feedlens-post--${settings.highlightIntensity}`);
@@ -30,39 +27,51 @@ export function renderMarker({ host, result, source, settings, onSelect }: Rende
   const button = document.createElement("button");
   button.type = "button";
   button.className = "feedlens-marker__button";
+  button.setAttribute("aria-label", "Show FeedLens details");
   button.setAttribute("aria-expanded", "false");
-  button.textContent = `FeedLens: ${labelForMarker(result.marker)}`;
+  button.setAttribute("aria-haspopup", "dialog");
 
-  const meta = document.createElement("span");
-  meta.className = "feedlens-marker__meta";
-  meta.textContent = `${result.confidence} confidence - ${source}`;
+  const icon = document.createElement("i");
+  icon.dataset.lucide = "search";
+  button.append(icon);
 
-  const detail = createDetail(result);
+  const detailId = `feedlens-detail-${++detailIdCounter}`;
+  button.setAttribute("aria-controls", detailId);
+
+  const detail = createDetail(result, source);
+  detail.id = detailId;
   detail.hidden = true;
 
   button.addEventListener("click", () => {
     const expanded = button.getAttribute("aria-expanded") === "true";
-    button.setAttribute("aria-expanded", String(!expanded));
+    const nextExpanded = !expanded;
+    button.setAttribute("aria-expanded", String(nextExpanded));
+    button.setAttribute(
+      "aria-label",
+      nextExpanded ? "Hide FeedLens details" : "Show FeedLens details"
+    );
     detail.hidden = expanded;
-    onSelect();
   });
 
-  marker.append(button, meta, detail);
+  marker.append(button, detail);
   host.prepend(marker);
+  hydrateIcons(marker);
 }
 
 export function renderPending(host: HTMLElement): void {
   clearMarker(host);
+  host.classList.add("feedlens-post", "feedlens-post--pending-state");
   const marker = document.createElement("div");
-  marker.className = "feedlens-marker feedlens-marker--pending";
-  marker.innerHTML = `<span class="feedlens-marker__button feedlens-marker__button--static">FeedLens: Analyzing</span>`;
+  marker.className = "feedlens-marker feedlens-marker--pending feedlens-marker--status";
+  marker.textContent = "FeedLens analyzing";
   host.prepend(marker);
 }
 
 export function renderError(host: HTMLElement, message: string): void {
   clearMarker(host);
+  host.classList.add("feedlens-post", "feedlens-post--error-state");
   const marker = document.createElement("div");
-  marker.className = "feedlens-marker feedlens-marker--error";
+  marker.className = "feedlens-marker feedlens-marker--error feedlens-marker--status";
   marker.textContent = message;
   host.prepend(marker);
 }
@@ -77,21 +86,39 @@ export function clearMarker(host: HTMLElement): void {
     "feedlens-post--subtle",
     "feedlens-post--standard",
     "feedlens-post--strong",
-    "feedlens-post--marker-only"
+    "feedlens-post--marker-only",
+    "feedlens-post--pending-state",
+    "feedlens-post--error-state"
   );
   delete host.dataset.feedlensMarker;
 }
 
-function createDetail(result: AnalysisResult): HTMLElement {
+function createDetail(result: AnalysisResult, source: "cache" | "gemini"): HTMLElement {
   const detail = document.createElement("section");
   detail.className = "feedlens-detail";
+  detail.setAttribute("role", "dialog");
+  detail.setAttribute("aria-label", "FeedLens analysis details");
+
+  const header = document.createElement("div");
+  header.className = "feedlens-detail__header";
+
+  const label = document.createElement("strong");
+  label.className = `feedlens-detail__label feedlens-detail__label--${result.marker}`;
+  label.textContent = labelForMarker(result.marker);
+
+  const meta = document.createElement("span");
+  meta.className = "feedlens-detail__meta";
+  meta.textContent = `${result.confidence} confidence - ${source}`;
+
+  header.append(label, meta);
 
   const scores = document.createElement("div");
   scores.className = "feedlens-detail__scores";
   scores.append(
     scorePill("Info", result.information_quality_score),
-    scorePill("Risk", result.misinformation_risk_score),
-    scorePill("Pressure", result.manipulation_pressure_score)
+    scorePill("Misinformation", result.misinformation_risk_score),
+    scorePill("Pressure", result.manipulation_pressure_score),
+    scorePill("Overall risk", result.overall_risk_score)
   );
 
   const summary = document.createElement("p");
@@ -100,21 +127,36 @@ function createDetail(result: AnalysisResult): HTMLElement {
 
   const signals = document.createElement("ul");
   signals.className = "feedlens-detail__signals";
-  for (const signal of result.signals.slice(0, 4)) {
+  for (const signal of result.signals) {
     const item = document.createElement("li");
-    item.textContent = `${formatSignal(signal.type)} (${signal.severity}): ${signal.explanation}`;
+    const title = document.createElement("strong");
+    title.textContent = `${formatSignal(signal.type)} (${signal.severity})`;
+
+    const explanation = document.createElement("span");
+    explanation.textContent = signal.explanation;
+
+    item.append(title, ": ", explanation);
+    if (signal.evidence) {
+      const evidence = document.createElement("em");
+      evidence.textContent = signal.evidence;
+      item.append(document.createElement("br"), evidence);
+    }
     signals.append(item);
   }
 
   const counter = document.createElement("p");
   counter.className = "feedlens-detail__counter";
-  counter.textContent = result.counter_reading;
+  counter.textContent = `Counter-reading: ${result.counter_reading}`;
 
-  detail.append(scores, summary);
+  const action = document.createElement("p");
+  action.className = "feedlens-detail__action";
+  action.textContent = `Suggested action: ${result.suggested_user_action}`;
+
+  detail.append(header, scores, summary);
   if (result.signals.length) {
     detail.append(signals);
   }
-  detail.append(counter);
+  detail.append(counter, action);
   return detail;
 }
 

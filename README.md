@@ -12,10 +12,10 @@ The current developer beta includes:
 
 - Platform adapters for visible-post detection, hashing, and inline markers on LinkedIn and supported X timelines.
 - Background service worker that owns Gemini calls and never exposes API keys to page scripts.
-- Popup controls for status, pause/resume, manual analysis, marker clearing, settings, and side panel access.
+- Popup controls for status, pause/resume, manual analysis, marker clearing, and settings.
 - Options page for Gemini key setup and privacy notice acceptance.
-- Side panel for session-local analysis details, scores, signals, copy, hide, feedback, and re-analysis.
-- Local-only analysis cache and session-only result list.
+- Inline Lens details for per-post analysis summaries, scores, signals, counter-readings, and suggested actions.
+- Local-only analysis cache.
 - TypeScript build, typecheck, and test tooling.
 
 Before installing or using FeedLens, review the [privacy policy](PRIVACY.md) and [disclaimer](DISCLAIMER.md), including the platform-risk notes.
@@ -94,7 +94,7 @@ For local test tooling only, copy `.env-example` to `.env` and set `GEMINI_API_K
 - Content scripts never read API keys.
 - FeedLens sends visible post text directly from the user's browser to Gemini only after setup and privacy acceptance.
 - Local cache stores analysis results, not full raw feed history. Analysis output may include short evidence quotes from visible post text.
-- Session results may include a short post snippet for the side panel and are stored in `chrome.storage.session`.
+- Inline details are rendered from the active post analysis response and are not mirrored to creator-controlled infrastructure.
 - No analytics, backend server, or creator-side data collection is implemented.
 
 ## Platform Notice

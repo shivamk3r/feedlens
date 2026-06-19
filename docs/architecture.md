@@ -10,24 +10,23 @@ FeedLens is a Manifest V3 Chrome extension with four runtime surfaces:
    - Detects visible post-like containers on LinkedIn and supported X home/profile timelines.
    - Extracts human-visible post text and removes common platform UI controls.
    - Hashes post text locally to deduplicate visible posts.
-   - Renders inline FeedLens markers and detail popovers.
+   - Renders inline FeedLens markers and Lens detail popovers.
    - Sends analysis requests to the background service worker.
    - Never reads or receives the Gemini API key.
 
 2. **Background service worker**
    - Owns all Gemini API calls.
-   - Reads settings, cache, session results, and API keys from Chrome extension storage.
+   - Reads settings, cache, and API keys from Chrome extension storage.
    - Validates privacy acceptance and key presence before analysis.
    - Calls Gemini `generateContent` with structured JSON output.
    - Validates and normalizes model responses before returning them to the content script.
 
 3. **Popup**
    - Shows setup state and current-tab scan counts.
-   - Provides pause/resume, manual analysis, clear visible markers, settings, and side panel commands.
+   - Provides pause/resume, manual analysis, clear visible markers, and settings.
 
-4. **Options page and side panel**
+4. **Options page**
    - Options owns configuration and key entry.
-   - Side panel shows session-local analysis details, feedback, hide/copy actions, and re-analysis commands.
 
 ## Data Flow
 
@@ -43,10 +42,9 @@ flowchart TD
   G -- "No" --> I["Gemini generateContent"]
   I --> J["Validate JSON schema"]
   J --> K["Store local cache entry"]
-  J --> L["Store session result summary"]
+  J --> L["Return new analysis"]
   H --> M["Content renders marker"]
   L --> M
-  L --> N["Side panel detail list"]
 ```
 
 ## Storage Model
@@ -56,7 +54,6 @@ flowchart TD
 | Settings | `chrome.storage.local` | Persistent | No post text. Customer-facing settings are limited to privacy acceptance. |
 | Gemini key | `chrome.storage.local` | Persistent | Stored only in Chrome extension storage on the user's device. |
 | Analysis cache | `chrome.storage.local` | Persistent | Stores structured result by hash/model/prompt version, not raw text. |
-| Session result list | `chrome.storage.session` | Browser session | Stores result plus short snippet for side panel review. |
 | Debug logs | `chrome.storage.session` | Browser session | Development builds only. Stores sanitized event metadata, not raw post text, API keys, Gemini request/response bodies, authors, URLs, snippets, summaries, or evidence quotes. |
 
 ## Gemini Integration
@@ -92,7 +89,7 @@ The build script bundles:
 
 - `assets/background.js` as an MV3 module service worker.
 - `assets/content.js` as a single classic content-script bundle.
-- `assets/popup.js`, `assets/options.js`, and `assets/sidepanel.js` as page scripts.
+- `assets/popup.js` and `assets/options.js` as page scripts.
 - `assets/feedlens.css` as shared extension and content-script CSS.
 
 `npm run build:dev` additionally emits `debug.html` and `assets/debug.js` for local development diagnostics. Production builds do not include the debug page or debug bundle.

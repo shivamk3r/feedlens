@@ -1,18 +1,8 @@
 import { analyzePost, clearCache, validateGeminiApiKey } from "./gemini";
 import { appendDebugLog, clearDebugLogs, getDebugLogs } from "../shared/debug";
 import { ERROR_MESSAGES } from "../shared/defaults";
-import {
-  getSessionResults,
-  getSetupStatus,
-  hideSessionResult,
-  selectResult,
-  setSessionResultFeedback
-} from "../shared/storage";
+import { getSetupStatus } from "../shared/storage";
 import type { BackgroundMessage } from "../shared/types";
-
-chrome.runtime.onInstalled.addListener(() => {
-  void chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: false });
-});
 
 chrome.runtime.onMessage.addListener((message: BackgroundMessage, _sender, sendResponse) => {
   void handleMessage(message)
@@ -44,21 +34,6 @@ async function handleMessage(message: BackgroundMessage): Promise<unknown> {
 
     case "feedlens:clearCache":
       await clearCache();
-      return { ok: true };
-
-    case "feedlens:getSessionResults":
-      return { ok: true, results: await getSessionResults() };
-
-    case "feedlens:hideResult":
-      await hideSessionResult(message.payload.hash);
-      return { ok: true };
-
-    case "feedlens:setFeedback":
-      await setSessionResultFeedback(message.payload.hash, message.payload.feedback);
-      return { ok: true };
-
-    case "feedlens:selectResult":
-      await selectResult(message.payload.hash);
       return { ok: true };
 
     case "feedlens:getDebugLogs":

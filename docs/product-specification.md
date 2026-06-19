@@ -120,8 +120,8 @@ Users need a lightweight tool that helps them move through their digital life wi
 3. Mark posts with subtle green, yellow, or red visual treatment.
 4. Allow users to configure their own Gemini API key.
 5. Avoid storing user data on external servers.
-6. Provide inline feed markings plus a side panel or popover for details.
-7. Work seamlessly behind the scenes while preserving user controls to pause, re-analyze, hide, or clear results.
+6. Provide inline feed markings plus a Lens popover for details.
+7. Work seamlessly behind the scenes while preserving user controls to pause, re-analyze, or clear results.
 
 ### Long-Term Goals
 
@@ -240,11 +240,6 @@ Required components:
    - Gemini API key input.
    - Privacy notice acceptance.
    - Clear key action.
-
-5. **Optional side panel**
-   - Displays analysis for selected posts.
-   - Provides a detailed breakdown.
-   - Supports copying, hiding, and re-analyzing results.
 
 ## 8. Permissions
 
@@ -539,17 +534,17 @@ Post text:
 
 ## 14. UX Requirements
 
-### Inline Badge
+### Inline Lens Marker
 
 Each analyzed post should receive a subtle marker. The visual treatment should be noticeable enough to guide attention but calm enough that it does not shame the author or make the feed feel hostile.
 
 ```text
-FeedLens: Green
-FeedLens: Yellow
-FeedLens: Red
+Green bezel + Lens button
+Yellow bezel + Lens button
+Red bezel + Lens button
 ```
 
-On click, the marker should show details.
+On click, the Lens button should show inline details for that post.
 
 ### Feed Highlighting
 
@@ -570,22 +565,20 @@ Suggested visual treatment:
    - Should be slightly red and polished, not aggressive or alarmist.
    - Should indicate "be aware of what you are consuming" rather than "this author is bad."
 
-### Side Panel
+### Lens Details Popover
 
-The side panel should show:
+The inline Lens details popover should show:
 
-1. List of analyzed posts.
-2. Green, yellow, or red marker for each post.
-3. Information-quality score.
-4. Misinformation-risk score.
-5. Manipulation-pressure score.
+1. Green, yellow, or red marker label.
+2. Information-quality score.
+3. Misinformation-risk score.
+4. Manipulation-pressure score.
+5. Overall risk score.
 6. Signal categories.
-7. Explanation.
+7. Evidence and explanations.
 8. Confidence.
-9. Button to re-analyze.
-10. Button to copy analysis.
-11. Button to hide result.
-12. Button to mark the result as useful or not useful locally.
+9. Counter-reading.
+10. Suggested user action.
 
 ### Color and Severity Labels
 
@@ -767,7 +760,7 @@ Before public launch, the project should review:
    - Open-source developer tool
    - Chrome Web Store extension
    - Manual text analyzer
-   - Browser side panel assistant
+   - Inline feed assistant
 
 The safest public version should make background analysis clearly opt-in during setup, limit analysis to visible posts, avoid auto-scrolling, and provide a manual text-selection fallback if platform policy risk becomes too high.
 
@@ -850,11 +843,10 @@ Avoid collecting:
 9. "Rewrite this post to be less manipulative."
 10. "Show me the neutral version of this post."
 11. Team training mode.
-12. Browser side panel mode.
-13. Export analysis report locally.
-14. Prompt version comparison.
-15. Model comparison mode.
-16. Retrieval-assisted fact checking for sources where the user explicitly enables it.
+12. Export analysis report locally.
+13. Prompt version comparison.
+14. Model comparison mode.
+15. Retrieval-assisted fact checking for sources where the user explicitly enables it.
 
 ## 23. Major Risks
 
@@ -885,7 +877,7 @@ LinkedIn or X page structure may change. The extension should be tested regularl
 ## 24. Open Questions
 
 1. How subtle should the default green, yellow, and red visual treatment be?
-2. Should FeedLens default to feed highlights, marker-only mode, or side-panel-only mode?
+2. Should FeedLens default to feed highlights or marker-only mode?
 3. Should the product be open source from day one?
 4. Which provider should be added after Gemini, if any?
 5. Should future platform support prefer site adapters or generic text-selection mode?
@@ -900,7 +892,7 @@ For the safest first version:
 Platform: Chrome extension
 Target: LinkedIn feed and supported X home/profile timelines
 Mode: Seamless visible-post analysis after user setup
-UI: Subtle green/yellow/red feed markers + side panel details
+UI: Subtle green/yellow/red feed bezels + inline Lens details
 AI: Gemini BYOK
 Provider: Gemini API only
 Storage: Local Chrome extension storage for the Gemini key

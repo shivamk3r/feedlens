@@ -9,8 +9,7 @@ import {
   getApiKey,
   getCacheEntry,
   getSettings,
-  putCacheEntry,
-  putSessionResult
+  putCacheEntry
 } from "../shared/storage";
 import {
   PROMPT_VERSION,
@@ -107,19 +106,6 @@ export async function analyzePost({
         event: "cache_hit",
         payload: { hash: post.hash, model: cached.model, version: cached.promptVersion }
       });
-      await putSessionResult({
-        platform: post.platform,
-        hash: post.hash,
-        postId: post.postId,
-        snippet: makeSnippet(post.text),
-        author: post.author,
-        url: post.url,
-        result: cached.result,
-        createdAt: new Date().toISOString(),
-        model: cached.model,
-        promptVersion: cached.promptVersion,
-        source: "cache"
-      });
 
       return { ok: true, hash: post.hash, result: cached.result, source: "cache" };
     }
@@ -143,20 +129,6 @@ export async function analyzePost({
         promptVersion: PROMPT_VERSION
       });
     }
-
-    await putSessionResult({
-      platform: post.platform,
-      hash: post.hash,
-      postId: post.postId,
-      snippet: makeSnippet(post.text),
-      author: post.author,
-      url: post.url,
-      result,
-      createdAt,
-      model: settings.model,
-      promptVersion: PROMPT_VERSION,
-      source: "gemini"
-    });
 
     await appendDebugLog({
       source: "background",
@@ -361,8 +333,4 @@ function normalizeGeminiError(error: unknown) {
     message: ERROR_MESSAGES.providerError,
     retryable: status ? status >= 500 : true
   };
-}
-
-function makeSnippet(text: string): string {
-  return text.replace(/\s+/g, " ").trim().slice(0, 220);
 }

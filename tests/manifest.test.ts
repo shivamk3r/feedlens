@@ -6,7 +6,8 @@ describe("extension manifest and privacy guardrails", () => {
     const manifest = JSON.parse(readFileSync("public/manifest.json", "utf8"));
 
     expect(manifest.manifest_version).toBe(3);
-    expect(manifest.permissions.sort()).toEqual(["activeTab", "sidePanel", "storage"]);
+    expect(manifest.permissions.sort()).toEqual(["activeTab", "storage"]);
+    expect(manifest.side_panel).toBeUndefined();
     expect(manifest.host_permissions.sort()).toEqual([
       "https://generativelanguage.googleapis.com/*",
       "https://www.linkedin.com/*",

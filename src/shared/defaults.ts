@@ -16,7 +16,7 @@ export const DEFAULT_SETTINGS: FeedLensSettings = {
   storeCache: true,
   highlightIntensity: "standard",
   sensitivity: "balanced",
-  uiMode: "both",
+  uiMode: "feed_highlights",
   maxVisiblePostsPerRun: 6
 };
 

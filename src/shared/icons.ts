@@ -1,33 +1,29 @@
 import {
+  Bug,
   Check,
   Copy,
-  EyeOff,
   KeyRound,
-  PanelRightOpen,
   Pause,
   Play,
   RefreshCcw,
   Save,
+  Search,
   Settings,
-  ThumbsDown,
-  ThumbsUp,
   Trash2,
   createIcons
 } from "lucide";
 
 const icons = {
+  Bug,
   Check,
   Copy,
-  EyeOff,
   KeyRound,
-  PanelRightOpen,
   Pause,
   Play,
   RefreshCcw,
   Save,
+  Search,
   Settings,
-  ThumbsDown,
-  ThumbsUp,
   Trash2
 };
 
