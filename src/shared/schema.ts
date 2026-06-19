@@ -135,12 +135,18 @@ export const analysisResponseSchema = {
 } as const;
 
 export function parseAnalysisJson(text: string): unknown {
-  const trimmed = text.trim();
-  const withoutFence = trimmed
-    .replace(/^```(?:json)?\s*/i, "")
-    .replace(/\s*```$/i, "")
-    .trim();
-  return JSON.parse(withoutFence);
+  const candidates = getJsonCandidates(text);
+  let lastError: unknown;
+
+  for (const candidate of candidates) {
+    try {
+      return JSON.parse(candidate);
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new SyntaxError("No valid JSON object found.");
 }
 
 export function validateAnalysisResult(value: unknown): AnalysisResult {
@@ -150,9 +156,19 @@ export function validateAnalysisResult(value: unknown): AnalysisResult {
 
   const marker = requireEnum(value.marker, markers, "marker");
   const confidence = requireEnum(value.confidence, confidences, "confidence");
-  const signals = Array.isArray(value.signals)
-    ? value.signals.map(validateSignal).slice(0, 12)
-    : fail("signals must be an array.");
+  const rawSignals =
+    value.signals === undefined || value.signals === null
+      ? []
+      : Array.isArray(value.signals)
+        ? value.signals
+        : fail("signals must be an array.");
+  const signals = rawSignals.flatMap((signal) => {
+    try {
+      return [validateSignal(signal)];
+    } catch {
+      return [];
+    }
+  }).slice(0, 12);
 
   return {
     marker,
@@ -188,11 +204,14 @@ function validateSignal(value: unknown): AnalysisSignal {
 }
 
 function requireScore(value: unknown, label: string): number {
-  if (typeof value !== "number" || !Number.isFinite(value)) {
+  const numericValue =
+    typeof value === "string" && value.trim() ? Number(value.trim()) : value;
+
+  if (typeof numericValue !== "number" || !Number.isFinite(numericValue)) {
     throw new Error(`${label} must be a number.`);
   }
 
-  const rounded = Math.round(value);
+  const rounded = Math.round(numericValue);
   if (rounded < 0 || rounded > 100) {
     throw new Error(`${label} must be between 0 and 100.`);
   }
@@ -214,11 +233,20 @@ function requireString(value: unknown, label: string, maxLength: number): string
 }
 
 function requireEnum<T extends string>(value: unknown, allowed: Set<T>, label: string): T {
-  if (typeof value !== "string" || !allowed.has(value as T)) {
+  if (typeof value !== "string") {
     throw new Error(`${label} has an unsupported value.`);
   }
 
-  return value as T;
+  if (allowed.has(value as T)) {
+    return value as T;
+  }
+
+  const normalized = normalizeEnumValue(value);
+  if (allowed.has(normalized as T)) {
+    return normalized as T;
+  }
+
+  throw new Error(`${label} has an unsupported value.`);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -227,4 +255,74 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function fail(message: string): never {
   throw new Error(message);
+}
+
+function getJsonCandidates(text: string): string[] {
+  const trimmed = text.trim();
+  const candidates = [trimmed];
+
+  for (const match of trimmed.matchAll(/```(?:json)?\s*([\s\S]*?)```/gi)) {
+    candidates.push(match[1]?.trim() ?? "");
+  }
+
+  candidates.push(
+    trimmed
+      .replace(/^```(?:json)?\s*/i, "")
+      .replace(/\s*```$/i, "")
+      .trim()
+  );
+
+  const balancedObject = findFirstBalancedJsonObject(trimmed);
+  if (balancedObject) {
+    candidates.push(balancedObject);
+  }
+
+  return Array.from(new Set(candidates.filter(Boolean)));
+}
+
+function findFirstBalancedJsonObject(text: string): string | undefined {
+  const start = text.indexOf("{");
+  if (start === -1) {
+    return undefined;
+  }
+
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+
+  for (let index = start; index < text.length; index += 1) {
+    const char = text[index];
+
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (char === "\\") {
+        escaped = true;
+      } else if (char === "\"") {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (char === "\"") {
+      inString = true;
+    } else if (char === "{") {
+      depth += 1;
+    } else if (char === "}") {
+      depth -= 1;
+      if (depth === 0) {
+        return text.slice(start, index + 1);
+      }
+    }
+  }
+
+  return undefined;
+}
+
+function normalizeEnumValue(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
 }
