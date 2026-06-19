@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This repository builds **FeedLens**, a privacy-first Chrome extension for scoring and surfacing manipulation-risk and information-quality signals on LinkedIn posts.
+This repository builds **FeedLens**, a privacy-first Chrome extension for scoring and surfacing manipulation-risk and information-quality signals on visible LinkedIn and X posts.
 
 ## First-Version Product Scope
 
@@ -11,6 +11,7 @@ This repository builds **FeedLens**, a privacy-first Chrome extension for scorin
 - Local developer testing may load `GEMINI_API_KEY` from a local `.env` file.
 - Do not add OpenAI, Anthropic, Ollama, local model, or custom provider support unless explicitly requested later.
 - Do not compile or bundle any `.env` value into a distributable Chrome extension build.
+- Supported platform scope is LinkedIn plus X home and profile timelines. Do not add broad host permissions, additional platforms, X API support, or automated engagement unless explicitly requested later.
 
 ## First Reads for Agents
 

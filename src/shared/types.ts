@@ -1,5 +1,6 @@
 export const PROMPT_VERSION = "feedlens-v1";
 
+export type SupportedPlatformId = "linkedin" | "x";
 export type Marker = "green" | "yellow" | "red";
 export type Confidence = "low" | "medium" | "high";
 export type Severity = "low" | "medium" | "high";
@@ -41,6 +42,7 @@ export interface AnalysisResult {
 }
 
 export interface ExtractedPost {
+  platform: SupportedPlatformId;
   postId: string;
   hash: string;
   text: string;
@@ -59,6 +61,7 @@ export interface FeedLensSettings {
   enabled: boolean;
   backgroundAnalysis: boolean;
   privacyAccepted: boolean;
+  privacyNoticeVersion: number;
   storageMode: StorageMode;
   model: string;
   temperature: number;
@@ -80,6 +83,7 @@ export interface AnalysisCacheEntry {
 }
 
 export interface SessionResult {
+  platform: SupportedPlatformId;
   hash: string;
   postId: string;
   snippet: string;
@@ -203,5 +207,7 @@ export interface ContentState {
   errorCount: number;
   paused: boolean;
   lastError?: string;
-  isLinkedIn: boolean;
+  supported: boolean;
+  platform?: SupportedPlatformId;
+  platformLabel?: string;
 }

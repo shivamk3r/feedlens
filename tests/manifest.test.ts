@@ -9,7 +9,8 @@ describe("extension manifest and privacy guardrails", () => {
     expect(manifest.permissions.sort()).toEqual(["activeTab", "sidePanel", "storage"]);
     expect(manifest.host_permissions.sort()).toEqual([
       "https://generativelanguage.googleapis.com/*",
-      "https://www.linkedin.com/*"
+      "https://www.linkedin.com/*",
+      "https://x.com/*"
     ]);
   });
 

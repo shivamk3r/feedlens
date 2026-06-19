@@ -1,16 +1,16 @@
 # FeedLens
 
-FeedLens is an open-source, privacy-first Chrome extension developer beta for surfacing information-quality and manipulation-risk signals on visible LinkedIn feed posts.
+FeedLens is an open-source, privacy-first Chrome extension developer beta for surfacing information-quality and manipulation-risk signals on visible LinkedIn posts and X home/profile timeline posts.
 
-The MVP is Gemini-only. Users bring their own Gemini API key, and FeedLens does not run a backend server or store LinkedIn feed data on creator-controlled infrastructure.
+The MVP is Gemini-only. Users bring their own Gemini API key, and FeedLens does not run a backend server or store feed data on creator-controlled infrastructure.
 
 ## Current Status
 
-This repository contains a loadable Manifest V3 Chrome extension for local developer testing. FeedLens is not published on the Chrome Web Store and is not affiliated with, endorsed by, or approved by LinkedIn, Google, Gemini, Chrome, or the Chrome Web Store.
+This repository contains a loadable Manifest V3 Chrome extension for local developer testing. FeedLens is not published on the Chrome Web Store and is not affiliated with, endorsed by, or approved by LinkedIn, X, Google, Gemini, Chrome, or the Chrome Web Store.
 
 The current developer beta includes:
 
-- LinkedIn content script for visible-post detection, hashing, and inline markers.
+- Platform adapters for visible-post detection, hashing, and inline markers on LinkedIn and supported X timelines.
 - Background service worker that owns Gemini calls and never exposes API keys to page scripts.
 - Popup controls for status, pause/resume, manual analysis, marker clearing, settings, and side panel access.
 - Options page for Gemini key setup and privacy notice acceptance.
@@ -18,7 +18,7 @@ The current developer beta includes:
 - Local-only analysis cache and session-only result list.
 - TypeScript build, typecheck, and test tooling.
 
-Before installing or using FeedLens, review the [privacy policy](PRIVACY.md) and [disclaimer](DISCLAIMER.md), including the LinkedIn platform-risk notes.
+Before installing or using FeedLens, review the [privacy policy](PRIVACY.md) and [disclaimer](DISCLAIMER.md), including the platform-risk notes.
 
 ## Getting Started
 
@@ -36,7 +36,7 @@ Install from a release ZIP:
 8. Select the extracted extension folder. If the ZIP extracts to a folder that contains `dist/`, select that `dist/` folder.
 9. Open the FeedLens options page.
 10. Enter your Gemini API key and accept the in-extension privacy notice.
-11. Open `https://www.linkedin.com/feed/` and use the FeedLens popup to analyze visible posts.
+11. Open `https://www.linkedin.com/feed/`, `https://x.com/home`, or an X profile timeline and use the FeedLens popup to analyze visible posts.
 
 Release ZIP installs do not require `npm install`, `.env`, or a local build. Unpacked extensions do not update automatically; repeat the release ZIP steps when you want to test a newer version.
 
@@ -73,7 +73,7 @@ Load `dist/` in Chrome for local developer testing:
 3. Choose Load unpacked.
 4. Select this repository's `dist/` directory.
 5. Open the FeedLens options page and enter your Gemini API key.
-6. Accept the in-extension privacy notice before analyzing visible posts.
+6. Accept the in-extension privacy notice before analyzing visible posts on supported platforms.
 
 When using a development build, the popup includes a Debug logs button. Debug logs are session-only and intentionally omit raw post text, API keys, Gemini request/response bodies, author names, URLs, snippets, summaries, and evidence quotes.
 
@@ -99,4 +99,4 @@ For local test tooling only, copy `.env-example` to `.env` and set `GEMINI_API_K
 
 ## Platform Notice
 
-FeedLens currently analyzes visible LinkedIn feed posts and adds local browser UI markers. LinkedIn may object to browser extensions that read LinkedIn page content, modify the appearance of LinkedIn pages, or interact with its website. Users should review LinkedIn's terms and policies before using FeedLens.
+FeedLens currently analyzes visible LinkedIn posts and supported X home/profile timeline posts, then adds local browser UI markers. LinkedIn or X may object to browser extensions that read page content, modify page appearance, or interact with their websites. Users should review each platform's terms and policies before using FeedLens.

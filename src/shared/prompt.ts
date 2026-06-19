@@ -3,7 +3,7 @@ import type { FeedLensSettings } from "./types";
 
 const geminiResponseSchema = stripUnsupportedGeminiSchema(analysisResponseSchema);
 
-export const SYSTEM_PROMPT = `You are FeedLens, a careful assistant that analyzes LinkedIn post text for information quality, misinformation risk, and manipulation or persuasion signals.
+export const SYSTEM_PROMPT = `You are FeedLens, a careful assistant that analyzes visible social post text for information quality, misinformation risk, and manipulation or persuasion signals.
 
 Rules:
 - Analyze only the supplied post text.
@@ -17,8 +17,14 @@ Rules:
 - When a recent factual claim is unsourced, frame it as needing current-source verification unless the supplied post text itself supports a stronger risk call.
 - Return only JSON that matches the provided schema.`;
 
-export function buildUserPrompt(postText: string, settings: FeedLensSettings): string {
-  return `Analyze this visible LinkedIn post for FeedLens.
+export function buildUserPrompt(
+  postText: string,
+  settings: FeedLensSettings,
+  platformLabel = "supported platform"
+): string {
+  return `Analyze this visible social post for FeedLens.
+
+Platform: ${platformLabel}
 
 Analysis depth: ${settings.analysisDepth}
 Sensitivity: ${settings.sensitivity}
@@ -44,7 +50,11 @@ Post text:
 ${postText}`;
 }
 
-export function buildGeminiRequestBody(postText: string, settings: FeedLensSettings): object {
+export function buildGeminiRequestBody(
+  postText: string,
+  settings: FeedLensSettings,
+  platformLabel?: string
+): object {
   return {
     systemInstruction: {
       role: "user",
@@ -53,7 +63,7 @@ export function buildGeminiRequestBody(postText: string, settings: FeedLensSetti
     contents: [
       {
         role: "user",
-        parts: [{ text: buildUserPrompt(postText, settings) }]
+        parts: [{ text: buildUserPrompt(postText, settings, platformLabel) }]
       }
     ],
     generationConfig: {

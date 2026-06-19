@@ -16,4 +16,15 @@ describe("hashing", () => {
     const second = await createCacheKey(text, "model-b", PROMPT_VERSION);
     expect(first).not.toEqual(second);
   });
+
+  it("separates post and cache hashes by platform", async () => {
+    const text = "The same visible post text can appear on multiple platforms.";
+
+    await expect(createPostHash(text, "linkedin")).resolves.not.toEqual(
+      await createPostHash(text, "x")
+    );
+    await expect(createCacheKey(text, "model-a", PROMPT_VERSION, "linkedin")).resolves.not.toEqual(
+      await createCacheKey(text, "model-a", PROMPT_VERSION, "x")
+    );
+  });
 });

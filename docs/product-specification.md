@@ -8,13 +8,13 @@ Fixed name: **FeedLens**
 
 ### One-Line Description
 
-FeedLens is a privacy-first Chrome extension that works quietly behind the scenes to help users identify misinformation risk, manipulation, engagement-bait, psychological pressure, and high-quality information in LinkedIn feed posts using their own Gemini API key.
+FeedLens is a privacy-first Chrome extension that works quietly behind the scenes to help users identify misinformation risk, manipulation, engagement-bait, psychological pressure, and high-quality information in visible LinkedIn posts and supported X timeline posts using their own Gemini API key.
 
 ### Product Summary
 
-FeedLens analyzes posts visible in a user's LinkedIn feed and overlays subtle, color-coded guidance directly on the feed. Posts with high-quality information are marked green, ambiguous or mixed-quality posts are marked yellow, and posts with strong misinformation risk or manipulative pressure are marked red.
+FeedLens analyzes posts visible in a user's supported social feeds and overlays subtle, color-coded guidance directly on the page. Posts with high-quality information are marked green, ambiguous or mixed-quality posts are marked yellow, and posts with strong misinformation risk or manipulative pressure are marked red.
 
-The extension does not require a user account, does not operate a backend server, does not store LinkedIn feed data, and does not pay for LLM usage. In the first version, users bring their own Gemini API key. Future versions may add other model providers or local model support, but they are out of scope for the initial implementation.
+The extension does not require a FeedLens user account, does not operate a backend server, does not store feed data on creator-controlled infrastructure, and does not pay for LLM usage. In the first version, users bring their own Gemini API key. Future versions may add other model providers or local model support, but they are out of scope for the initial implementation.
 
 The product is not intended to censor content, block posts, or label people as manipulative. It helps users navigate their digital life with more awareness by making it clear when a post appears informative, uncertain, unsupported, emotionally pressuring, or potentially manipulative. Users can still consume any content they want, but FeedLens helps them notice what kind of content they are consuming.
 
@@ -23,7 +23,7 @@ The product is not intended to censor content, block posts, or label people as m
 FeedLens should be positioned as:
 
 ```text
-A privacy-first digital information lens for LinkedIn.
+A privacy-first digital information lens for LinkedIn and X.
 ```
 
 Avoid positioning such as:
@@ -37,14 +37,14 @@ A tool that labels posts as propaganda.
 Recommended public copy:
 
 ```text
-FeedLens helps you understand the quality and persuasive pressure of the information you consume on LinkedIn.
+FeedLens helps you understand the quality and persuasive pressure of the information you consume on LinkedIn and supported X timelines.
 
 It subtly marks posts as green, yellow, or red based on signals like evidence quality, misinformation risk, urgency, fear framing, vague authority, social proof pressure, and engagement bait. It uses your own Gemini API key, and your feed does not pass through our servers.
 ```
 
 ## 2. Problem Statement
 
-LinkedIn feeds often contain posts optimized for attention, virality, emotional reaction, professional insecurity, and engagement. Users may find it difficult to distinguish genuinely useful information from content that relies on misinformation risk, unsupported claims, psychological pressure, vague authority, fear of missing out, or performative storytelling.
+LinkedIn and X feeds often contain posts optimized for attention, virality, emotional reaction, professional insecurity, status pressure, outrage, and engagement. Users may find it difficult to distinguish genuinely useful information from content that relies on misinformation risk, unsupported claims, psychological pressure, vague authority, fear of missing out, or performative storytelling.
 
 Current platforms show engagement metrics, but they do not help users understand whether a post is informative, uncertain, misleading, or emotionally manipulative.
 
@@ -55,8 +55,8 @@ Users need a lightweight tool that helps them move through their digital life wi
 ### Primary Users
 
 1. **Knowledge workers**
-   - People who spend time on LinkedIn for career, hiring, networking, and industry updates.
-   - They want to avoid misinformation and emotional manipulation in viral professional content.
+   - People who spend time on LinkedIn and X for career, hiring, networking, industry updates, and fast-moving public conversation.
+   - They want to avoid misinformation and emotional manipulation in viral professional and public content.
 
 2. **Founders and builders**
    - People who consume a lot of startup, AI, growth, and productivity content.
@@ -84,7 +84,7 @@ Users need a lightweight tool that helps them move through their digital life wi
    - No backend.
    - No user accounts.
    - No server-side logging.
-   - No storage of LinkedIn feed data by the product creator.
+   - No storage of feed data by the product creator.
 
 2. **User-controlled AI**
    - Users provide their own Gemini API key.
@@ -115,7 +115,7 @@ Users need a lightweight tool that helps them move through their digital life wi
 
 ### MVP Goals
 
-1. Analyze visible LinkedIn feed posts after the user has configured the extension.
+1. Analyze visible posts on supported platforms after the user has configured the extension.
 2. Detect misinformation-risk, manipulation, persuasion, and information-quality signals in each post.
 3. Mark posts with subtle green, yellow, or red visual treatment.
 4. Allow users to configure their own Gemini API key.
@@ -125,7 +125,7 @@ Users need a lightweight tool that helps them move through their digital life wi
 
 ### Long-Term Goals
 
-1. Support multiple social platforms.
+1. Support additional social platforms beyond LinkedIn and X.
 2. Support additional model providers and local models.
 3. Improve scoring calibration over time.
 4. Provide media literacy education.
@@ -136,15 +136,15 @@ Users need a lightweight tool that helps them move through their digital life wi
 
 The MVP will not:
 
-1. Store LinkedIn posts on a server.
-2. Build a centralized dataset of LinkedIn content.
-3. Auto-scroll through the LinkedIn feed.
+1. Store LinkedIn or X posts on a server.
+2. Build a centralized dataset of platform content.
+3. Auto-scroll through supported feeds or timelines.
 4. Automatically engage with posts.
 5. Rank authors or profiles.
 6. Claim that a post author is intentionally manipulative.
 7. Provide legal, psychological, or medical conclusions.
 8. Replace human judgment.
-9. Use the official LinkedIn API.
+9. Use the official LinkedIn API or X API.
 10. Require users to create an account.
 11. Support non-Gemini providers or local model endpoints.
 
@@ -161,14 +161,14 @@ The MVP will not:
 Visible posts are analyzed using Gemini with your API key. FeedLens does not operate a backend and does not store your data.
 ```
 
-5. User opens the LinkedIn feed.
+5. User opens LinkedIn, `https://x.com/home`, or a supported X profile timeline.
 6. Extension starts analyzing visible posts in the background.
 7. Extension marks posts with subtle green, yellow, or red treatment.
 8. User can pause background analysis or switch to manual analysis from the popup.
 
 ### Normal Usage
 
-1. User visits LinkedIn feed.
+1. User visits a supported LinkedIn or X page.
 2. Extension detects posts as they become visible.
 3. Extension extracts post text without auto-scrolling or engaging with the page.
 4. Extension sends visible post text directly to the Gemini API using the user's configured key.
@@ -217,8 +217,8 @@ FeedLens will be delivered as a Chrome extension using Manifest V3.
 Required components:
 
 1. **Content script**
-   - Runs on LinkedIn pages.
-   - Detects visible post containers.
+   - Runs on LinkedIn and X pages covered by narrow host permissions.
+   - Detects visible post containers on supported routes.
    - Extracts post text.
    - Renders subtle green, yellow, or red feed markings when enabled.
    - Does not access API keys.
@@ -259,12 +259,13 @@ Suggested permissions:
     "activeTab"
   ],
   "host_permissions": [
-    "https://www.linkedin.com/*"
+    "https://www.linkedin.com/*",
+    "https://x.com/*"
   ]
 }
 ```
 
-For MVP, keep permissions narrow and limited to LinkedIn. Behind-the-scenes analysis should only run after the user configures Gemini access, accepts the privacy notice, and visits LinkedIn in their own browser session. Avoid broad browsing permissions and do not analyze non-LinkedIn pages unless support is explicitly added later.
+For MVP, keep permissions narrow and limited to LinkedIn, X, and Gemini. Behind-the-scenes analysis should only run after the user configures Gemini access, accepts the current privacy notice, and visits a supported page in their own browser session. Avoid broad browsing permissions and do not analyze unsupported pages unless support is explicitly added later.
 
 ## 9. Data Handling and Privacy
 
@@ -272,7 +273,7 @@ For MVP, keep permissions narrow and limited to LinkedIn. Behind-the-scenes anal
 
 The extension may process:
 
-1. Visible LinkedIn post text.
+1. Visible LinkedIn post text or supported X timeline post text.
 2. Post author display name, if needed for UI context.
 3. Public engagement text visible in the post, if needed.
 4. FeedLens Gemini runtime settings.
@@ -283,8 +284,8 @@ The extension may process:
 
 The product creator will not collect:
 
-1. LinkedIn posts.
-2. Profile data.
+1. LinkedIn or X posts.
+2. LinkedIn or X profile data.
 3. API keys.
 4. Browsing history.
 5. Analysis results.
@@ -310,14 +311,14 @@ The `.env` file must remain local and must not be committed. Do not print or log
 Suggested user-facing copy:
 
 ```text
-FeedLens analyzes visible LinkedIn posts using Gemini with the API key you configure.
+FeedLens analyzes visible posts on supported platforms using Gemini with the API key you configure.
 
 We do not run a backend server.
-We do not store your LinkedIn feed.
+We do not store your feed.
 We do not collect your API key.
 We do not sell or share your data.
 
-When FeedLens analyzes a visible post, the post text may be sent directly from your browser to the Gemini API. Your use of Gemini is subject to Google's privacy policy and billing terms.
+When FeedLens analyzes a visible LinkedIn post or supported X timeline post, the post text may be sent directly from your browser to the Gemini API. Your use of Gemini is subject to Google's privacy policy and billing terms.
 ```
 
 ## 10. LLM Provider Support
@@ -510,7 +511,7 @@ The model prompt should instruct the LLM to:
 ### Prompt Template
 
 ```text
-You are analyzing a LinkedIn post for information quality, misinformation risk, and manipulation signals.
+You are analyzing a visible social post for information quality, misinformation risk, and manipulation signals.
 
 Do not judge the author.
 Do not claim intent.
@@ -666,7 +667,7 @@ Gemini returned an error. Check your API key, billing status, or rate limits.
 ### No Posts Detected
 
 ```text
-No visible LinkedIn posts detected. Scroll to your feed and try again.
+No visible supported posts detected. Scroll to your feed or timeline and try again.
 ```
 
 ### Invalid LLM Response
@@ -684,7 +685,7 @@ Your Gemini rate limit was reached. Try fewer posts or wait before analyzing aga
 ## 17. Technical Architecture
 
 ```text
-LinkedIn Page
+Supported Platform Page
    |
    v
 Content Script
@@ -731,7 +732,7 @@ Pseudo-code:
 
 ```ts
 function getVisiblePosts(): ExtractedPost[] {
-  const candidates = document.querySelectorAll('[data-urn], .feed-shared-update-v2');
+  const candidates = platformAdapter.querySelectorAll(document);
 
   return Array.from(candidates)
     .filter(isVisible)
@@ -757,10 +758,11 @@ function getVisiblePosts(): ExtractedPost[] {
 Before public launch, the project should review:
 
 1. LinkedIn terms of service.
-2. Chrome Web Store policies.
-3. Data privacy obligations.
-4. Whether injecting UI into LinkedIn pages creates platform policy risk.
-5. Whether the product should be released as:
+2. X terms of service and developer policy.
+3. Chrome Web Store policies.
+4. Data privacy obligations.
+5. Whether injecting UI into platform pages creates platform policy risk.
+6. Whether the product should be released as:
    - Personal local tool
    - Open-source developer tool
    - Chrome Web Store extension
@@ -774,7 +776,7 @@ The safest public version should make background analysis clearly opt-in during 
 ### Milestone 1: Prototype
 
 - Create Chrome extension boilerplate.
-- Add LinkedIn content script.
+- Add supported-platform content script.
 - Detect visible post text.
 - Show extracted post count and placeholder feed markers.
 - Do not include LLM integration yet.
@@ -808,7 +810,7 @@ The safest public version should make background analysis clearly opt-in during 
 
 ### Milestone 6: Beta Release
 
-- Test on multiple LinkedIn feed layouts.
+- Test on multiple LinkedIn feed layouts and supported X timeline layouts.
 - Improve selector robustness.
 - Add onboarding.
 - Add feedback mechanism that does not collect post text by default.
@@ -829,7 +831,7 @@ Possible metrics:
 
 Avoid collecting:
 
-1. LinkedIn post text.
+1. LinkedIn or X post text.
 2. Author names.
 3. Profile URLs.
 4. Feed history.
@@ -838,28 +840,27 @@ Avoid collecting:
 ## 22. Future Features
 
 1. Manual text selection analyzer.
-2. Support for X/Twitter.
-3. Support for Reddit.
-4. Support for YouTube comments.
-5. Local-only classifier model.
-6. OpenAI, Anthropic, Ollama/local model, and custom endpoint support.
-7. Rules-based fast pre-filtering.
-8. Custom user-defined manipulation categories.
-9. Educational explanations.
-10. "Rewrite this post to be less manipulative."
-11. "Show me the neutral version of this post."
-12. Team training mode.
-13. Browser side panel mode.
-14. Export analysis report locally.
-15. Prompt version comparison.
-16. Model comparison mode.
-17. Retrieval-assisted fact checking for sources where the user explicitly enables it.
+2. Support for additional platforms such as Reddit.
+3. Support for YouTube comments.
+4. Local-only classifier model.
+5. OpenAI, Anthropic, Ollama/local model, and custom endpoint support.
+6. Rules-based fast pre-filtering.
+7. Custom user-defined manipulation categories.
+8. Educational explanations.
+9. "Rewrite this post to be less manipulative."
+10. "Show me the neutral version of this post."
+11. Team training mode.
+12. Browser side panel mode.
+13. Export analysis report locally.
+14. Prompt version comparison.
+15. Model comparison mode.
+16. Retrieval-assisted fact checking for sources where the user explicitly enables it.
 
 ## 23. Major Risks
 
 ### Platform Risk
 
-LinkedIn may object to extensions that modify or analyze the feed. The product should minimize automation and avoid scraping behavior.
+LinkedIn or X may object to extensions that modify or analyze feeds/timelines. X's public terms and developer policy create elevated risk around scraping and use of X Content. The product should minimize automation, avoid scraping at scale, avoid platform APIs unless explicitly approved, and keep X support limited to user-visible home/profile timelines.
 
 ### Privacy Risk
 
@@ -879,7 +880,7 @@ Users may accidentally spend too much on Gemini calls. The product should show e
 
 ### DOM Fragility Risk
 
-LinkedIn's page structure may change. The extension should be tested regularly and designed with resilient extraction logic.
+LinkedIn or X page structure may change. The extension should be tested regularly and designed with resilient extraction logic.
 
 ## 24. Open Questions
 
@@ -887,7 +888,7 @@ LinkedIn's page structure may change. The extension should be tested regularly a
 2. Should FeedLens default to feed highlights, marker-only mode, or side-panel-only mode?
 3. Should the product be open source from day one?
 4. Which provider should be added after Gemini, if any?
-5. Should the first version be LinkedIn-only or generic text-selection based?
+5. Should future platform support prefer site adapters or generic text-selection mode?
 6. Should there be a "neutral rewrite" feature?
 7. Should there be a conservative scoring mode to reduce false positives?
 
@@ -897,7 +898,7 @@ For the safest first version:
 
 ```text
 Platform: Chrome extension
-Target: LinkedIn feed
+Target: LinkedIn feed and supported X home/profile timelines
 Mode: Seamless visible-post analysis after user setup
 UI: Subtle green/yellow/red feed markers + side panel details
 AI: Gemini BYOK

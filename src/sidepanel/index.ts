@@ -1,4 +1,5 @@
 import { hydrateIcons } from "../shared/icons";
+import { platformLabel } from "../shared/platforms";
 import type { ContentState, SessionResult, SetupStatus } from "../shared/types";
 import {
   analysisToText,
@@ -45,7 +46,7 @@ async function render(notice?: string): Promise<void> {
       ${
         results.length
           ? results.map((result) => renderResult(result, status.selectedHash)).join("")
-          : `<div class="fl-card"><h2>No analyzed posts</h2><p>Open LinkedIn and run FeedLens on visible feed posts.</p></div>`
+          : `<div class="fl-card"><h2>No analyzed posts</h2><p>Open LinkedIn or a supported X timeline and run FeedLens on visible posts.</p></div>`
       }
     </section>
   `;
@@ -63,7 +64,7 @@ function renderResult(result: SessionResult, selectedHash?: string): string {
     <article class="fl-card fl-result ${selected ? "fl-result--selected" : ""}" data-hash="${escapeHtml(result.hash)}">
       <div class="fl-row">
         <span class="${markerClass(analysis.marker)}">${markerLabel(analysis.marker)}</span>
-        <span class="fl-help">${analysis.confidence} confidence - ${result.source}</span>
+        <span class="fl-help">${escapeHtml(platformLabel(result.platform))} - ${analysis.confidence} confidence - ${result.source}</span>
       </div>
       <p class="fl-result__snippet">${escapeHtml(result.snippet)}</p>
       ${result.author ? `<div class="fl-help">Author: ${escapeHtml(result.author)}</div>` : ""}

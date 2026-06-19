@@ -1,4 +1,4 @@
-import { DEFAULT_SETTINGS } from "./defaults";
+import { DEFAULT_SETTINGS, PRIVACY_NOTICE_VERSION } from "./defaults";
 import type {
   ApiKeyHealth,
   AnalysisCacheEntry,
@@ -176,11 +176,16 @@ export async function getSetupStatus(): Promise<SetupStatus> {
 
 export function normalizeSettings(value: unknown): FeedLensSettings {
   const record = isRecord(value) ? value : {};
+  const storedPrivacyNoticeVersion = numberOr(record.privacyNoticeVersion, 0);
+  const privacyAccepted =
+    booleanOr(record.privacyAccepted, DEFAULT_SETTINGS.privacyAccepted) &&
+    storedPrivacyNoticeVersion >= PRIVACY_NOTICE_VERSION;
 
   return {
     enabled: booleanOr(record.enabled, DEFAULT_SETTINGS.enabled),
     backgroundAnalysis: DEFAULT_SETTINGS.backgroundAnalysis,
-    privacyAccepted: booleanOr(record.privacyAccepted, DEFAULT_SETTINGS.privacyAccepted),
+    privacyAccepted,
+    privacyNoticeVersion: PRIVACY_NOTICE_VERSION,
     storageMode: DEFAULT_SETTINGS.storageMode,
     model: DEFAULT_SETTINGS.model,
     temperature: DEFAULT_SETTINGS.temperature,
@@ -210,6 +215,10 @@ async function getRecordMap<T>(area: StorageArea, key: string): Promise<Record<s
 
 function booleanOr(value: unknown, fallback: boolean): boolean {
   return typeof value === "boolean" ? value : fallback;
+}
+
+function numberOr(value: unknown, fallback: number): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

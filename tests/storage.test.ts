@@ -100,6 +100,21 @@ describe("extension storage helpers", () => {
     });
   });
 
+  it("requires re-acceptance for legacy privacy notice versions", async () => {
+    await getChromeMock().storage.local.set({
+      "feedlens.settings.v1": {
+        ...DEFAULT_SETTINGS,
+        privacyAccepted: true,
+        privacyNoticeVersion: 1
+      }
+    });
+
+    await expect(getSettings()).resolves.toEqual({
+      ...DEFAULT_SETTINGS,
+      privacyAccepted: false
+    });
+  });
+
   it("stores analysis cache entries without raw post text", async () => {
     await putCacheEntry({
       cacheKey: "hash-model-prompt",

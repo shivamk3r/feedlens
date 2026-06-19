@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { extractPostText, getVisiblePostEntries } from "../src/content/extract";
+import {
+  extractPostText,
+  getCurrentPlatformAdapter,
+  getPlatformAdapter,
+  getVisiblePostEntries,
+  isSupportedPlatformPage
+} from "../src/content/extract";
 
 function positioned(element: HTMLElement, top: number, bottom: number): void {
   element.getBoundingClientRect = () =>
@@ -72,6 +78,7 @@ describe("LinkedIn post extraction", () => {
 
     const entries = await getVisiblePostEntries({ maxPosts: 5 });
     expect(entries).toHaveLength(1);
+    expect(entries[0]?.post.platform).toBe("linkedin");
     expect(entries[0]?.post.postId).toBe("urn:li:activity:123");
     expect(entries[0]?.post.author).toBe("Asha Builder");
     expect(entries[0]?.post.url).toBe("https://www.linkedin.com/feed/update/urn:li:activity:123");
@@ -135,5 +142,70 @@ describe("LinkedIn post extraction", () => {
     await expect(
       getVisiblePostEntries({ maxPosts: 5, lookaheadPixels: 500 })
     ).resolves.toHaveLength(1);
+  });
+});
+
+describe("platform support", () => {
+  it("detects LinkedIn and X hosts", () => {
+    expect(getCurrentPlatformAdapter(new URL("https://www.linkedin.com/feed/"))?.id).toBe(
+      "linkedin"
+    );
+    expect(getCurrentPlatformAdapter(new URL("https://x.com/home"))?.id).toBe("x");
+    expect(getCurrentPlatformAdapter(new URL("https://example.com/"))).toBeUndefined();
+  });
+
+  it("supports X home and profile timelines but excludes other X routes", () => {
+    const x = getPlatformAdapter("x");
+
+    expect(isSupportedPlatformPage(x, new URL("https://x.com/home"))).toBe(true);
+    expect(isSupportedPlatformPage(x, new URL("https://x.com/maya_researcher"))).toBe(true);
+    expect(isSupportedPlatformPage(x, new URL("https://x.com/maya_researcher/status/123"))).toBe(
+      false
+    );
+    expect(isSupportedPlatformPage(x, new URL("https://x.com/search"))).toBe(false);
+    expect(isSupportedPlatformPage(x, new URL("https://x.com/messages"))).toBe(false);
+  });
+});
+
+describe("X post extraction", () => {
+  it("extracts visible post text and ignores controls and quoted posts", async () => {
+    document.body.innerHTML = `
+      <main>
+        <article data-testid="tweet">
+          <div data-testid="User-Name">
+            <span>Maya Researcher</span>
+            <span>@maya</span>
+            <time>2h</time>
+          </div>
+          <a href="https://x.com/maya/status/1234567890">2h</a>
+          <div data-testid="tweetText">
+            AI policy claims need context, sources, and clear uncertainty.
+            A useful thread separates evidence from speculation before asking readers to act.
+          </div>
+          <div role="group">
+            <button data-testid="reply">Reply</button>
+            <button data-testid="retweet">Repost</button>
+            <button data-testid="like">Like</button>
+          </div>
+          <article data-testid="tweet">
+            <div data-testid="tweetText">Quoted post text should not be analyzed as the main post.</div>
+          </article>
+        </article>
+      </main>
+    `;
+
+    const post = document.querySelector<HTMLElement>("article[data-testid='tweet']");
+    expect(post).toBeTruthy();
+    visible(post as HTMLElement);
+
+    const entries = await getVisiblePostEntries({ maxPosts: 5, platform: "x" });
+    expect(entries).toHaveLength(1);
+    expect(entries[0]?.post.platform).toBe("x");
+    expect(entries[0]?.post.postId).toBe("x:status:1234567890");
+    expect(entries[0]?.post.author).toBe("Maya Researcher");
+    expect(entries[0]?.post.url).toBe("https://x.com/maya/status/1234567890");
+    expect(entries[0]?.post.text).toContain("AI policy claims need context");
+    expect(entries[0]?.post.text).not.toContain("Repost");
+    expect(entries[0]?.post.text).not.toContain("Quoted post text");
   });
 });

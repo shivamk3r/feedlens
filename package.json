@@ -2,7 +2,7 @@
   "name": "feedlens",
   "version": "0.1.1",
   "private": true,
-  "description": "Privacy-first Chrome extension for LinkedIn information-quality and manipulation-risk signals.",
+  "description": "Privacy-first Chrome extension for LinkedIn and X information-quality and manipulation-risk signals.",
   "type": "module",
   "scripts": {
     "clean": "rimraf dist coverage",
@@ -16,6 +16,7 @@
   "keywords": [
     "chrome-extension",
     "linkedin",
+    "x",
     "gemini",
     "privacy"
   ],

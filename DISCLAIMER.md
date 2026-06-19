@@ -4,15 +4,15 @@ FeedLens is an open-source developer beta for local testing. It is not published
 
 ## No Affiliation
 
-FeedLens is not affiliated with, endorsed by, sponsored by, or approved by LinkedIn, Google, Gemini, Chrome, or the Chrome Web Store.
+FeedLens is not affiliated with, endorsed by, sponsored by, or approved by LinkedIn, X, Google, Gemini, Chrome, or the Chrome Web Store.
 
-LinkedIn, Google, Gemini, Chrome, and related names are trademarks or services of their respective owners.
+LinkedIn, X, Twitter, Google, Gemini, Chrome, and related names are trademarks or services of their respective owners.
 
 ## Platform Terms and Account Risk
 
-FeedLens currently analyzes visible LinkedIn feed posts and adds local browser UI markers while the user browses LinkedIn. Users should review LinkedIn's terms and policies before installing or using the extension.
+FeedLens currently analyzes visible LinkedIn posts and supported X home/profile timeline posts, then adds local browser UI markers while the user browses those platforms. Users should review each platform's terms and policies before installing or using the extension.
 
-LinkedIn may object to browser extensions that read LinkedIn page content, modify the appearance of LinkedIn pages, or otherwise interact with LinkedIn's website. LinkedIn may change its site, block or break extensions, restrict accounts, or take other action under its policies.
+LinkedIn or X may object to browser extensions that read page content, modify page appearance, or otherwise interact with their websites. X's current public terms say users may not scrape X services without express written permission, and X's developer policy governs use of X Content. See [X Terms of Service](https://x.com/en/tos) and [X Developer Policy](https://docs.x.com/developer-terms/policy). Platforms may change their sites, block or break extensions, restrict accounts, or take other action under their policies.
 
 Use FeedLens at your own discretion and risk.
 
@@ -24,4 +24,4 @@ Users should treat FeedLens results as reading aids and should apply their own j
 
 ## Local Developer Beta
 
-Installation instructions in this repository are for local developer testing with Chrome's unpacked-extension workflow. They are not a statement that the project is approved for Chrome Web Store distribution or approved by LinkedIn.
+Installation instructions in this repository are for local developer testing with Chrome's unpacked-extension workflow. They are not a statement that the project is approved for Chrome Web Store distribution or approved by LinkedIn or X.

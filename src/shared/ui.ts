@@ -1,4 +1,5 @@
 import type { BackgroundMessage, ContentMessage, Marker, SessionResult } from "./types";
+import { platformLabel } from "./platforms";
 
 export function markerLabel(marker: Marker): string {
   if (marker === "green") {
@@ -28,6 +29,7 @@ export function analysisToText(result: SessionResult): string {
 
   return [
     `FeedLens: ${markerLabel(result.result.marker)}`,
+    `Platform: ${platformLabel(result.platform)}`,
     `Confidence: ${result.result.confidence}`,
     `Information Quality: ${result.result.information_quality_score}`,
     `Misinformation Risk: ${result.result.misinformation_risk_score}`,

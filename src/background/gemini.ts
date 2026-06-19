@@ -1,6 +1,7 @@
 import { appendDebugLog } from "../shared/debug";
 import { ERROR_MESSAGES } from "../shared/defaults";
 import { createCacheKey } from "../shared/hash";
+import { platformLabel } from "../shared/platforms";
 import { buildGeminiRequestBody } from "../shared/prompt";
 import { parseAnalysisJson, validateAnalysisResult } from "../shared/schema";
 import {
@@ -97,7 +98,7 @@ export async function analyzePost({
     };
   }
 
-  const cacheKey = await createCacheKey(post.text, settings.model, PROMPT_VERSION);
+  const cacheKey = await createCacheKey(post.text, settings.model, PROMPT_VERSION, post.platform);
   if (settings.storeCache && !force) {
     const cached = await getCacheEntry(cacheKey);
     if (cached) {
@@ -107,6 +108,7 @@ export async function analyzePost({
         payload: { hash: post.hash, model: cached.model, version: cached.promptVersion }
       });
       await putSessionResult({
+        platform: post.platform,
         hash: post.hash,
         postId: post.postId,
         snippet: makeSnippet(post.text),
@@ -129,7 +131,7 @@ export async function analyzePost({
       event: "cache_miss",
       payload: { hash: post.hash, model: settings.model, version: PROMPT_VERSION }
     });
-    const result = await callGemini(post.text, settings, apiKey);
+    const result = await callGemini(post.text, settings, apiKey, platformLabel(post.platform));
     const createdAt = new Date().toISOString();
 
     if (settings.storeCache) {
@@ -143,6 +145,7 @@ export async function analyzePost({
     }
 
     await putSessionResult({
+      platform: post.platform,
       hash: post.hash,
       postId: post.postId,
       snippet: makeSnippet(post.text),
@@ -231,8 +234,13 @@ export async function callGemini(
   postText: string,
   settings: Awaited<ReturnType<typeof getSettings>>,
   apiKey: string,
-  fetchImpl: typeof fetch = fetch
+  fetchImplOrPlatformLabel: typeof fetch | string = fetch,
+  maybePlatformLabel?: string
 ) {
+  const fetchImpl =
+    typeof fetchImplOrPlatformLabel === "function" ? fetchImplOrPlatformLabel : fetch;
+  const requestPlatformLabel =
+    typeof fetchImplOrPlatformLabel === "string" ? fetchImplOrPlatformLabel : maybePlatformLabel;
   const model = settings.model.replace(/^models\//, "");
   await appendDebugLog({
     source: "gemini",
@@ -245,7 +253,7 @@ export async function callGemini(
       "Content-Type": "application/json",
       "x-goog-api-key": apiKey
     },
-    body: JSON.stringify(buildGeminiRequestBody(postText, settings))
+    body: JSON.stringify(buildGeminiRequestBody(postText, settings, requestPlatformLabel))
   });
 
   if (!response.ok) {

@@ -26,13 +26,19 @@ async function render(state: PopupState = {}): Promise<void> {
 
   const configured = status.hasApiKey && status.settings.privacyAccepted;
   const paused = !status.settings.enabled || page?.paused;
-  const linkedInOpen = Boolean(page?.isLinkedIn);
+  const supportedPlatformOpen = Boolean(page?.supported);
+  const platformName = page?.platformLabel ?? "supported platform";
+  const tagline = configured
+    ? page?.platformLabel
+      ? `Ready on ${escapeHtml(page.platformLabel)}`
+      : "Configured"
+    : "Setup needed";
 
   root.innerHTML = `
     <header class="fl-topbar">
       <div class="fl-brand">
         <div class="fl-brand__name">FeedLens</div>
-        <div class="fl-brand__tagline">${configured ? "Ready on LinkedIn" : "Setup needed"}</div>
+        <div class="fl-brand__tagline">${tagline}</div>
       </div>
       <span class="${configured ? "fl-badge fl-badge--green" : "fl-badge fl-badge--yellow"}">
         ${configured ? "Configured" : "Not configured"}
@@ -46,20 +52,20 @@ async function render(state: PopupState = {}): Promise<void> {
           : `<div class="fl-warning">Add your Gemini API key and accept the privacy notice before FeedLens analyzes visible posts.</div>`
       }
       ${
-        linkedInOpen
+        supportedPlatformOpen
           ? renderPageState(page)
-          : `<div class="fl-card"><h2>LinkedIn tab not detected</h2><p>Open your LinkedIn feed, then use FeedLens from that tab.</p></div>`
+          : renderUnsupportedPageState(page)
       }
       <div class="fl-card">
         <h2>Controls</h2>
         <div class="fl-actions">
-          <button class="fl-button" id="feedlens-toggle" ${!linkedInOpen ? "disabled" : ""}>
+          <button class="fl-button" id="feedlens-toggle" ${!supportedPlatformOpen ? "disabled" : ""}>
             <i data-lucide="${paused ? "play" : "pause"}"></i>${paused ? "Resume" : "Pause"}
           </button>
-          <button class="fl-button fl-button--primary" id="feedlens-analyze" ${!linkedInOpen || !configured ? "disabled" : ""}>
+          <button class="fl-button fl-button--primary" id="feedlens-analyze" ${!supportedPlatformOpen || !configured ? "disabled" : ""}>
             <i data-lucide="refresh-ccw"></i>Analyze visible
           </button>
-          <button class="fl-button" id="feedlens-clear" ${!linkedInOpen ? "disabled" : ""}>
+          <button class="fl-button" id="feedlens-clear" ${!supportedPlatformOpen ? "disabled" : ""}>
             <i data-lucide="trash-2"></i>Clear markers
           </button>
           <button class="fl-button" id="feedlens-sidepanel">
@@ -94,7 +100,7 @@ async function render(state: PopupState = {}): Promise<void> {
 function renderPageState(page?: ContentState): string {
   return `
     <div class="fl-card">
-      <h2>Visible feed</h2>
+      <h2>${escapeHtml(page?.platformLabel ?? "Visible")} feed</h2>
       <div class="fl-stats">
         <span>Detected: ${page?.detectedCount ?? 0}</span>
         <span>Analyzed: ${page?.analyzedCount ?? 0}</span>
@@ -104,6 +110,14 @@ function renderPageState(page?: ContentState): string {
       ${page?.lastError ? `<div class="fl-error">${escapeHtml(page.lastError)}</div>` : ""}
     </div>
   `;
+}
+
+function renderUnsupportedPageState(page?: ContentState): string {
+  if (page?.platformLabel) {
+    return `<div class="fl-card"><h2>${escapeHtml(page.platformLabel)} page not supported</h2><p>Open a supported ${escapeHtml(page.platformLabel)} feed or profile timeline, then use FeedLens from that tab.</p></div>`;
+  }
+
+  return `<div class="fl-card"><h2>Supported platform tab not detected</h2><p>Open LinkedIn or an X home/profile timeline, then use FeedLens from that tab.</p></div>`;
 }
 
 function bindActions(status: SetupStatus, page?: ContentState): void {

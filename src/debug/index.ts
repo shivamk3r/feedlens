@@ -49,7 +49,7 @@ async function render(notice?: string): Promise<void> {
       ${
         logs.length
           ? logs.map(renderLogEntry).join("")
-          : `<div class="fl-card"><h2>No debug logs yet</h2><p>Use a development build and run FeedLens on LinkedIn to collect session logs.</p></div>`
+          : `<div class="fl-card"><h2>No debug logs yet</h2><p>Use a development build and run FeedLens on a supported platform to collect session logs.</p></div>`
       }
     </section>
   `;

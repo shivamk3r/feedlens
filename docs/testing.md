@@ -57,6 +57,13 @@ CLAUDE.md -> AGENTS.md
 14. Pause FeedLens from the popup and confirm no new automatic analysis runs.
 15. Clear markers from the popup.
 
+Repeat the visible-post flow on:
+
+- `https://x.com/home`
+- one X profile timeline such as `https://x.com/{handle}`
+
+Confirm unsupported X routes such as search, messages, notifications, and individual post detail pages do not auto-analyze and show an unsupported-page state in the popup.
+
 ## Privacy/Security Manual Checks
 
 - Do not inspect or print `.env`.
@@ -71,7 +78,7 @@ CLAUDE.md -> AGENTS.md
 
 ## Known MVP Limits
 
-- LinkedIn DOM selectors may need maintenance as LinkedIn changes markup.
+- LinkedIn and X DOM selectors may need maintenance as platform markup changes.
 - The side panel can re-analyze only posts still known to the active content script.
 - Results are model assessments, not definitive fact checks.
 - No provider other than Gemini is implemented.

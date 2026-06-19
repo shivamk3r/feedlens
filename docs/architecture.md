@@ -5,9 +5,10 @@
 FeedLens is a Manifest V3 Chrome extension with four runtime surfaces:
 
 1. **Content script**
-   - Runs only on `https://www.linkedin.com/*`.
-   - Detects visible LinkedIn post-like containers.
-   - Extracts human-visible post text and removes common LinkedIn UI controls.
+   - Runs only on `https://www.linkedin.com/*` and `https://x.com/*`.
+   - Selects a platform adapter for LinkedIn or X at runtime.
+   - Detects visible post-like containers on LinkedIn and supported X home/profile timelines.
+   - Extracts human-visible post text and removes common platform UI controls.
    - Hashes post text locally to deduplicate visible posts.
    - Renders inline FeedLens markers and detail popovers.
    - Sends analysis requests to the background service worker.
@@ -32,7 +33,7 @@ FeedLens is a Manifest V3 Chrome extension with four runtime surfaces:
 
 ```mermaid
 flowchart TD
-  A["Visible LinkedIn post"] --> B["Content script extracts text"]
+  A["Visible supported-platform post"] --> B["Content script extracts text"]
   B --> C["Local SHA-256 hash"]
   C --> D["Background analyzePost message"]
   D --> E{"Setup accepted and key exists?"}
@@ -97,3 +98,12 @@ The build script bundles:
 `npm run build:dev` additionally emits `debug.html` and `assets/debug.js` for local development diagnostics. Production builds do not include the debug page or debug bundle.
 
 No `.env` value is read by the build script, and `.env` files are ignored by git.
+
+## Platform Adapters
+
+FeedLens keeps platform-specific DOM work inside content-script adapters:
+
+- `linkedin`: supports LinkedIn pages using feed/update and feed-list selectors.
+- `x`: supports `https://x.com/home` and single-profile timelines such as `https://x.com/example`.
+
+Unsupported X routes such as search, messages, notifications, lists, communities, and individual post detail pages are detected but not scanned. The extension does not use the LinkedIn API or X API, does not auto-scroll, and does not like, repost, comment, connect, follow, message, or post.

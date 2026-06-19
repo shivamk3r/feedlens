@@ -29,7 +29,7 @@ describe("options page", () => {
     expect(text).toContain("Gemini API key");
     expect(text).toContain("Not configured");
     expect(text).toContain("Privacy notice");
-    expect(text).toContain("Visible posts may be sent directly from this browser to Gemini");
+    expect(text).toContain("Visible posts on supported platforms may be sent directly");
 
     expect(text).not.toContain(".env");
     expect(text).not.toContain("Key storage");

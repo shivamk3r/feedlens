@@ -1,6 +1,6 @@
 # Privacy Policy
 
-FeedLens is a local-first developer beta for analyzing visible LinkedIn feed posts with a user-provided Gemini API key.
+FeedLens is a local-first developer beta for analyzing visible LinkedIn posts and supported X timeline posts with a user-provided Gemini API key.
 
 ## What FeedLens Does Not Collect
 
@@ -9,15 +9,15 @@ FeedLens does not run a backend server, does not use analytics, and does not col
 The project creator does not collect:
 
 - Gemini API keys
-- LinkedIn feed posts
-- LinkedIn profile data
+- LinkedIn or X posts
+- LinkedIn or X profile data
 - browsing history
 - analysis results
 - user identities
 
 ## Local Data Handling
 
-FeedLens stores the Gemini API key in Chrome extension storage on the user's device. The key is read by the extension background service worker and is not exposed to LinkedIn page scripts.
+FeedLens stores the Gemini API key in Chrome extension storage on the user's device. The key is read by the extension background service worker and is not exposed to platform page scripts.
 
 FeedLens may store local settings and a local analysis cache in `chrome.storage.local`. The cache stores analysis output keyed by a hash/model/prompt version. It does not store a full raw feed history, but analysis output may include short evidence quotes generated from visible post text.
 
@@ -25,7 +25,7 @@ FeedLens may store session results in `chrome.storage.session` for the side pane
 
 ## Gemini Data Transfer
 
-After the user configures a Gemini API key and accepts the in-extension privacy notice, FeedLens may send visible LinkedIn post text directly from the user's browser to the Gemini API using the user's API key.
+After the user configures a Gemini API key and accepts the in-extension privacy notice, FeedLens may send visible LinkedIn post text or supported X timeline post text directly from the user's browser to the Gemini API using the user's API key.
 
 FeedLens does not proxy Gemini requests through a creator-controlled server. The user's use of Gemini is subject to Google's and Gemini's applicable privacy policies, API terms, billing terms, retention practices, abuse-monitoring practices, and review practices.
 

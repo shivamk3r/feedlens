@@ -18,7 +18,9 @@ const contentState = {
   pendingCount: 0,
   errorCount: 0,
   paused: false,
-  isLinkedIn: true
+  supported: true,
+  platform: "linkedin",
+  platformLabel: "LinkedIn"
 };
 
 async function loadPopup(): Promise<HTMLElement> {

@@ -25,6 +25,7 @@ const validAnalysis: AnalysisResult = {
 };
 
 const post: ExtractedPost = {
+  platform: "linkedin",
   postId: "urn:li:activity:1",
   hash: "abc123",
   text: "Act now or your career will fall behind. Top performers all use this system.",
@@ -59,7 +60,7 @@ describe("Gemini analysis service", () => {
       "additionalProperties"
     );
     expect(body.generationConfig.responseFormat).toBeUndefined();
-    expect(body.contents[0].parts[0].text).toContain("Analyze this visible LinkedIn post");
+    expect(body.contents[0].parts[0].text).toContain("Analyze this visible social post");
   });
 
   it("maps Gemini rate limits to a retryable FeedLens error", async () => {

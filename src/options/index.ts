@@ -66,7 +66,7 @@ async function render(state: OptionsViewState = {}): Promise<void> {
           </div>
           <label class="fl-switch">
             <input type="checkbox" name="privacyAccepted" ${checked(settings.privacyAccepted)} />
-            <span>Visible posts may be sent directly from this browser to Gemini using my API key.</span>
+            <span>Visible posts on supported platforms may be sent directly from this browser to Gemini using my API key.</span>
           </label>
           <div class="fl-actions">
             <button class="fl-button fl-button--primary" type="submit"><i data-lucide="save"></i>Save</button>
@@ -78,8 +78,8 @@ async function render(state: OptionsViewState = {}): Promise<void> {
       <aside class="fl-section">
         <div class="fl-card">
           <h2>Privacy notice</h2>
-          <p>FeedLens analyzes visible LinkedIn posts using Gemini with the API key you configure. FeedLens does not run a backend, does not store your LinkedIn feed on creator servers, and does not collect your API key.</p>
-          <p>When analysis runs, visible post text may be sent directly from your browser to Gemini. Your Gemini use is subject to Google's privacy policy and billing terms.</p>
+          <p>FeedLens analyzes visible posts on supported platforms using Gemini with the API key you configure. FeedLens does not run a backend, does not store your feed on creator servers, and does not collect your API key.</p>
+          <p>When analysis runs, visible post text from LinkedIn or supported X timelines may be sent directly from your browser to Gemini. Your Gemini use is subject to Google's privacy policy and billing terms.</p>
         </div>
       </aside>
     </section>

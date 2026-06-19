@@ -1,7 +1,21 @@
 import { createPostHash } from "../shared/hash";
-import type { ExtractedPost } from "../shared/types";
+import type { ExtractedPost, SupportedPlatformId } from "../shared/types";
 
-const POST_SELECTORS = [
+type LocationLike = Pick<Location, "hostname" | "pathname">;
+
+export interface PlatformAdapter {
+  id: SupportedPlatformId;
+  label: string;
+  postSelectors: string;
+  matchesLocation(location: LocationLike): boolean;
+  isSupportedPath(location: LocationLike): boolean;
+  extractPostText(element: HTMLElement): string;
+  extractPostId(element: HTMLElement, fallbackHash: string): string;
+  extractAuthor(element: HTMLElement): string | undefined;
+  extractPostUrl(element: HTMLElement): string | undefined;
+}
+
+const LINKEDIN_POST_SELECTORS = [
   "[data-testid='mainFeed'] [role='listitem']",
   "[data-sdui-screen*='feed.MainFeed'] [role='listitem']",
   "div.feed-shared-update-v2",
@@ -10,7 +24,7 @@ const POST_SELECTORS = [
   "div[data-id*='urn:li:activity']"
 ].join(",");
 
-const REMOVE_SELECTORS = [
+const LINKEDIN_REMOVE_SELECTORS = [
   ".feedlens-marker",
   ".feedlens-detail",
   ".feedlens-status",
@@ -45,14 +59,14 @@ const REMOVE_SELECTORS = [
   "[aria-hidden='true']"
 ].join(",");
 
-const AUTHOR_SELECTORS = [
+const LINKEDIN_AUTHOR_SELECTORS = [
   ".update-components-actor__name",
   ".feed-shared-actor__name",
   "[data-test-id='actor-name']",
   "a.update-components-actor__meta-link span[aria-hidden='true']"
 ];
 
-const UI_TEXT = new Set([
+const LINKEDIN_UI_TEXT = new Set([
   "like",
   "comment",
   "repost",
@@ -69,21 +83,116 @@ const UI_TEXT = new Set([
   "feedlens"
 ]);
 
+const X_POST_SELECTORS = "article[data-testid='tweet']";
+
+const X_REMOVE_SELECTORS = [
+  ".feedlens-marker",
+  ".feedlens-detail",
+  ".feedlens-status",
+  "article[data-testid='tweet'] article[data-testid='tweet']",
+  "[data-testid='reply']",
+  "[data-testid='retweet']",
+  "[data-testid='like']",
+  "[data-testid='bookmark']",
+  "[data-testid='share']",
+  "[data-testid='caret']",
+  "[data-testid='analytics']",
+  "[role='group']",
+  "[role='button']",
+  "[role='menu']",
+  "[role='menuitem']",
+  "button",
+  "input",
+  "textarea",
+  "select",
+  "svg",
+  "img",
+  "video"
+].join(",");
+
+const X_UI_TEXT = new Set([
+  "reply",
+  "repost",
+  "quote",
+  "like",
+  "bookmark",
+  "share",
+  "view",
+  "views",
+  "show more",
+  "read more",
+  "translate post",
+  "feedlens"
+]);
+
+const X_RESERVED_PROFILE_PATHS = new Set([
+  "account",
+  "bookmarks",
+  "compose",
+  "communities",
+  "explore",
+  "help",
+  "home",
+  "i",
+  "jobs",
+  "lists",
+  "login",
+  "logout",
+  "messages",
+  "notifications",
+  "premium",
+  "privacy",
+  "search",
+  "settings",
+  "share",
+  "tos"
+]);
+
+const LINKEDIN_ADAPTER: PlatformAdapter = {
+  id: "linkedin",
+  label: "LinkedIn",
+  postSelectors: LINKEDIN_POST_SELECTORS,
+  matchesLocation: (location) =>
+    location.hostname === "www.linkedin.com" || location.hostname.endsWith(".linkedin.com"),
+  isSupportedPath: () => true,
+  extractPostText: (element) =>
+    extractPostTextFromClone(element, LINKEDIN_REMOVE_SELECTORS, isLinkedInUiLine),
+  extractPostId: extractLinkedInPostId,
+  extractAuthor: extractLinkedInAuthor,
+  extractPostUrl: extractLinkedInPostUrl
+};
+
+const X_ADAPTER: PlatformAdapter = {
+  id: "x",
+  label: "X",
+  postSelectors: X_POST_SELECTORS,
+  matchesLocation: (location) => location.hostname === "x.com",
+  isSupportedPath: isXSupportedPath,
+  extractPostText: extractXPostText,
+  extractPostId: extractXPostId,
+  extractAuthor: extractXAuthor,
+  extractPostUrl: extractXPostUrl
+};
+
+const PLATFORM_ADAPTERS = [LINKEDIN_ADAPTER, X_ADAPTER] as const;
+
 export interface ExtractVisiblePostsOptions {
   root?: ParentNode;
   minTextLength?: number;
   maxPosts?: number;
   lookaheadPixels?: number;
   now?: Date;
+  platform?: PlatformAdapter | SupportedPlatformId;
 }
 
 export async function getVisiblePosts({
   root = document,
   minTextLength = 50,
   maxPosts = 12,
-  now = new Date()
+  now = new Date(),
+  platform
 }: ExtractVisiblePostsOptions = {}): Promise<ExtractedPost[]> {
-  const entries = await getVisiblePostEntries({ root, minTextLength, maxPosts, now });
+  const entries = await getVisiblePostEntries({ root, minTextLength, maxPosts, now, platform });
   return entries.map((entry) => entry.post);
 }
 
@@ -92,22 +201,24 @@ export async function getVisiblePostEntries({
   minTextLength = 50,
   maxPosts = 12,
   lookaheadPixels = 0,
-  now = new Date()
+  now = new Date(),
+  platform
 }: ExtractVisiblePostsOptions = {}): Promise<Array<{ element: HTMLElement; post: ExtractedPost }>> {
-  const candidates = Array.from(root.querySelectorAll<HTMLElement>(POST_SELECTORS))
-    .filter((element) => !hasAncestorPost(element))
+  const adapter = resolvePlatformAdapter(platform) ?? LINKEDIN_ADAPTER;
+  const candidates = Array.from(root.querySelectorAll<HTMLElement>(adapter.postSelectors))
+    .filter((element) => !hasAncestorPost(element, adapter))
     .filter((element) => isVisiblePost(element, lookaheadPixels));
 
   const entries: Array<{ element: HTMLElement; post: ExtractedPost }> = [];
   const seen = new Set<string>();
 
   for (const element of candidates) {
-    const text = extractPostText(element);
+    const text = adapter.extractPostText(element);
     if (text.length < minTextLength) {
       continue;
     }
 
-    const hash = await createPostHash(text);
+    const hash = await createPostHash(text, adapter.id);
     if (seen.has(hash)) {
       continue;
     }
@@ -116,11 +227,12 @@ export async function getVisiblePostEntries({
     entries.push({
       element,
       post: {
-        postId: extractPostId(element, hash),
+        platform: adapter.id,
+        postId: adapter.extractPostId(element, hash),
         hash,
         text,
-        author: extractAuthor(element),
-        url: extractPostUrl(element),
+        author: adapter.extractAuthor(element),
+        url: adapter.extractPostUrl(element),
         detectedAt: now.toISOString()
       }
     });
@@ -133,28 +245,28 @@ export async function getVisiblePostEntries({
   return entries;
 }
 
-export function extractPostText(element: HTMLElement): string {
-  const clone = element.cloneNode(true) as HTMLElement;
-  clone.querySelectorAll(REMOVE_SELECTORS).forEach((node) => node.remove());
+export function getCurrentPlatformAdapter(
+  currentLocation: LocationLike = window.location
+): PlatformAdapter | undefined {
+  return PLATFORM_ADAPTERS.find((adapter) => adapter.matchesLocation(currentLocation));
+}
 
-  const rawText = getElementText(clone);
-  const lines = rawText
-    .split(/\n+/)
-    .map(cleanLine)
-    .filter(Boolean)
-    .filter((line) => !isUiLine(line));
+export function getPlatformAdapter(platform: SupportedPlatformId): PlatformAdapter {
+  return PLATFORM_ADAPTERS.find((adapter) => adapter.id === platform) ?? LINKEDIN_ADAPTER;
+}
 
-  const uniqueLines: string[] = [];
-  const seen = new Set<string>();
-  for (const line of lines) {
-    const key = line.toLowerCase();
-    if (!seen.has(key)) {
-      uniqueLines.push(line);
-      seen.add(key);
-    }
-  }
+export function isSupportedPlatformPage(
+  adapter: PlatformAdapter,
+  currentLocation: LocationLike = window.location
+): boolean {
+  return adapter.isSupportedPath(currentLocation);
+}
 
-  return uniqueLines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+export function extractPostText(
+  element: HTMLElement,
+  platform: SupportedPlatformId = "linkedin"
+): string {
+  return getPlatformAdapter(platform).extractPostText(element);
 }
 
 export function isVisiblePost(element: HTMLElement, lookaheadPixels = 0): boolean {
@@ -177,21 +289,82 @@ export function isVisiblePost(element: HTMLElement, lookaheadPixels = 0): boolea
   );
 }
 
-export function extractPostId(element: HTMLElement, fallbackHash: string): string {
+export function extractPostId(
+  element: HTMLElement,
+  fallbackHash: string,
+  platform: SupportedPlatformId = "linkedin"
+): string {
+  return getPlatformAdapter(platform).extractPostId(element, fallbackHash);
+}
+
+function resolvePlatformAdapter(
+  platform: PlatformAdapter | SupportedPlatformId | undefined
+): PlatformAdapter | undefined {
+  return typeof platform === "string" ? getPlatformAdapter(platform) : platform ?? getCurrentPlatformAdapter();
+}
+
+function extractPostTextFromClone(
+  element: HTMLElement,
+  removeSelectors: string,
+  isUiLine: (line: string) => boolean
+): string {
+  const clone = element.cloneNode(true) as HTMLElement;
+  clone.querySelectorAll(removeSelectors).forEach((node) => node.remove());
+  return cleanPostText(getElementText(clone), isUiLine);
+}
+
+function extractXPostText(element: HTMLElement): string {
+  const clone = element.cloneNode(true) as HTMLElement;
+  clone.querySelectorAll(X_REMOVE_SELECTORS).forEach((node) => node.remove());
+
+  const primaryText = Array.from(clone.querySelectorAll<HTMLElement>("[data-testid='tweetText']"))
+    .map(getElementText)
+    .join("\n");
+
+  return cleanPostText(primaryText || getElementText(clone), isXUiLine);
+}
+
+function cleanPostText(rawText: string, isUiLine: (line: string) => boolean): string {
+  const lines = rawText
+    .split(/\n+/)
+    .map(cleanLine)
+    .filter(Boolean)
+    .filter((line) => !isUiLine(line));
+
+  const uniqueLines: string[] = [];
+  const seen = new Set<string>();
+  for (const line of lines) {
+    const key = line.toLowerCase();
+    if (!seen.has(key)) {
+      uniqueLines.push(line);
+      seen.add(key);
+    }
+  }
+
+  return uniqueLines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+}
+
+function extractLinkedInPostId(element: HTMLElement, fallbackHash: string): string {
   const directId =
     element.getAttribute("data-urn") ??
     element.getAttribute("data-id") ??
     element.querySelector<HTMLElement>("[data-urn]")?.getAttribute("data-urn") ??
     element.querySelector<HTMLElement>("[data-id]")?.getAttribute("data-id");
 
-  return directId?.trim() || `feedlens:${fallbackHash.slice(0, 16)}`;
+  return directId?.trim() || `feedlens:linkedin:${fallbackHash.slice(0, 16)}`;
 }
 
-function extractAuthor(element: HTMLElement): string | undefined {
-  for (const selector of AUTHOR_SELECTORS) {
+function extractXPostId(element: HTMLElement, fallbackHash: string): string {
+  const url = extractXPostUrl(element);
+  const statusId = url?.match(/\/status\/(\d+)/)?.[1];
+  return statusId ? `x:status:${statusId}` : `feedlens:x:${fallbackHash.slice(0, 16)}`;
+}
+
+function extractLinkedInAuthor(element: HTMLElement): string | undefined {
+  for (const selector of LINKEDIN_AUTHOR_SELECTORS) {
     const author = element.querySelector<HTMLElement>(selector);
     const text = author ? cleanLine(getElementText(author)) : "";
-    if (text && !isUiLine(text)) {
+    if (text && !isLinkedInUiLine(text)) {
       return text.slice(0, 120);
     }
   }
@@ -199,25 +372,78 @@ function extractAuthor(element: HTMLElement): string | undefined {
   return undefined;
 }
 
-function extractPostUrl(element: HTMLElement): string | undefined {
+function extractXAuthor(element: HTMLElement): string | undefined {
+  const nameBlock = element.querySelector<HTMLElement>("[data-testid='User-Name']");
+  if (!nameBlock) {
+    return undefined;
+  }
+
+  const candidates = Array.from(nameBlock.querySelectorAll<HTMLElement>("span"))
+    .map((span) => cleanLine(getElementText(span)))
+    .filter(Boolean)
+    .filter((text) => !text.startsWith("@"))
+    .filter((text) => text !== "·")
+    .filter((text) => !/^\d+[smhd]$/.test(text.toLowerCase()))
+    .filter((text) => !isXUiLine(text));
+
+  return candidates[0]?.slice(0, 120);
+}
+
+function extractLinkedInPostUrl(element: HTMLElement): string | undefined {
   const link = element.querySelector<HTMLAnchorElement>(
     "a[href*='/feed/update/'], a[href*='urn:li:activity']"
   );
 
-  if (!link?.href) {
+  return normalizeUrl(link?.href);
+}
+
+function extractXPostUrl(element: HTMLElement): string | undefined {
+  const links = Array.from(element.querySelectorAll<HTMLAnchorElement>("a[href*='/status/']"));
+  const link = links.find((candidate) => {
+    try {
+      return /\/[^/]+\/status\/\d+/.test(new URL(candidate.href, window.location.href).pathname);
+    } catch {
+      return false;
+    }
+  });
+
+  return normalizeUrl(link?.href);
+}
+
+function hasAncestorPost(element: HTMLElement, adapter: PlatformAdapter): boolean {
+  const parentPost = element.parentElement?.closest(adapter.postSelectors);
+  return Boolean(parentPost);
+}
+
+function isXSupportedPath(location: LocationLike): boolean {
+  const pathname = location.pathname.replace(/\/+$/, "") || "/";
+  if (pathname === "/home") {
+    return true;
+  }
+
+  const segments = pathname.split("/").filter(Boolean);
+  if (segments.length !== 1) {
+    return false;
+  }
+
+  const handle = segments[0];
+  if (!handle) {
+    return false;
+  }
+
+  return /^[A-Za-z0-9_]{1,15}$/.test(handle) && !X_RESERVED_PROFILE_PATHS.has(handle.toLowerCase());
+}
+
+function normalizeUrl(value: string | undefined): string | undefined {
+  if (!value) {
     return undefined;
   }
 
   try {
-    return new URL(link.href, window.location.href).toString();
+    return new URL(value, window.location.href).toString();
   } catch {
     return undefined;
   }
-}
-
-function hasAncestorPost(element: HTMLElement): boolean {
-  const parentPost = element.parentElement?.closest(POST_SELECTORS);
-  return Boolean(parentPost);
 }
 
 function getElementText(element: HTMLElement): string {
@@ -230,11 +456,21 @@ function cleanLine(line: string): string {
   return line.replace(/\s+/g, " ").trim();
 }
 
-function isUiLine(line: string): boolean {
+function isLinkedInUiLine(line: string): boolean {
   const normalized = line.toLowerCase().replace(/\s+/g, " ").trim();
   return (
-    UI_TEXT.has(normalized) ||
+    LINKEDIN_UI_TEXT.has(normalized) ||
     /^\d+(\.\d+)?[kKmM]?\s*(reactions?|comments?|reposts?)$/.test(normalized) ||
     /^(\d+\s*)?(like|comment|repost|send)$/.test(normalized)
+  );
+}
+
+function isXUiLine(line: string): boolean {
+  const normalized = line.toLowerCase().replace(/\s+/g, " ").trim();
+  return (
+    X_UI_TEXT.has(normalized) ||
+    /^\d+(\.\d+)?[kKmM]?$/.test(normalized) ||
+    /^\d+(\.\d+)?[kKmM]?\s*(replies|reposts|quotes|likes|views|bookmarks)$/.test(normalized) ||
+    /^(\d+\s*)?(reply|repost|quote|like|bookmark|share)$/.test(normalized)
   );
 }

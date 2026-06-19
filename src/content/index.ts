@@ -10,7 +10,11 @@ import type {
   FeedLensSettings,
   SetupStatus
 } from "../shared/types";
-import { getVisiblePostEntries } from "./extract";
+import {
+  getCurrentPlatformAdapter,
+  getVisiblePostEntries,
+  isSupportedPlatformPage
+} from "./extract";
 import { clearMarker, renderError, renderMarker, renderPending } from "./render";
 
 type PostStatus = "detected" | "pending" | "analyzed" | "error";
@@ -26,6 +30,7 @@ const visiblePosts = new Map<string, VisiblePostState>();
 const POST_LOOKAHEAD_VIEWPORT_RATIO = 1;
 const MIN_POST_LOOKAHEAD_PIXELS = 600;
 const MAX_POST_LOOKAHEAD_PIXELS = 1600;
+const platform = getCurrentPlatformAdapter();
 let settings: FeedLensSettings | undefined;
 let hasApiKey = false;
 let manualPaused = false;
@@ -36,12 +41,13 @@ let observer: MutationObserver | undefined;
 bootstrap();
 
 function bootstrap(): void {
-  if (!isLinkedInPage()) {
+  if (!platform) {
     return;
   }
 
   document.documentElement.dataset.feedlensLoaded = "true";
-  logDebug("bootstrap", { host: location.hostname });
+  document.documentElement.dataset.feedlensPlatform = platform.id;
+  logDebug("bootstrap", { host: location.hostname, platform: platform.id });
   chrome.runtime.onMessage.addListener(handleContentMessage);
   chrome.storage.onChanged.addListener((changes, areaName) => {
     if (areaName === "local" && Object.keys(changes).some((key) => key.startsWith("feedlens."))) {
@@ -132,12 +138,29 @@ function scheduleScan(delay = 500): void {
 }
 
 async function scanVisible({ force, manual }: { force: boolean; manual: boolean }): Promise<void> {
+  if (!platform) {
+    return;
+  }
+
   if (!settings) {
     await refreshStatus();
   }
 
   if (!settings) {
     logDebug("scan_skipped", { reason: "missing_settings", manual, force }, "warn");
+    return;
+  }
+
+  if (!isSupportedPlatformPage(platform)) {
+    if (manual) {
+      lastError = ERROR_MESSAGES.unsupportedPlatform;
+    }
+    logDebug("scan_skipped", {
+      reason: "unsupported_route",
+      platform: platform.id,
+      manual,
+      force
+    });
     return;
   }
 
@@ -157,13 +180,15 @@ async function scanVisible({ force, manual }: { force: boolean; manual: boolean 
   logDebug("scan_started", {
     force,
     manual,
+    platform: platform.id,
     maxPosts: settings.maxVisiblePostsPerRun,
     lookaheadPixels
   });
 
   const entries = await getVisiblePostEntries({
     maxPosts: settings.maxVisiblePostsPerRun,
-    lookaheadPixels
+    lookaheadPixels,
+    platform
   });
   logDebug("posts_extracted", { count: entries.length, manual, force });
   if (!entries.length) {
@@ -289,7 +314,9 @@ function getContentState(): ContentState {
     errorCount: states.filter((state) => state.status === "error").length,
     paused: manualPaused || Boolean(settings && !settings.enabled),
     lastError,
-    isLinkedIn: isLinkedInPage()
+    supported: Boolean(platform && isSupportedPlatformPage(platform)),
+    platform: platform?.id,
+    platformLabel: platform?.label
   };
 }
 
@@ -313,10 +340,6 @@ function getPostLookaheadPixels(): number {
     MAX_POST_LOOKAHEAD_PIXELS,
     Math.max(MIN_POST_LOOKAHEAD_PIXELS, Math.round(viewportHeight * POST_LOOKAHEAD_VIEWPORT_RATIO))
   );
-}
-
-function isLinkedInPage(): boolean {
-  return location.hostname === "www.linkedin.com" || location.hostname.endsWith(".linkedin.com");
 }
 
 function sendBackgroundMessage<T = unknown>(message: BackgroundMessage): Promise<T> {
