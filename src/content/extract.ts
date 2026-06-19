@@ -73,6 +73,7 @@ export interface ExtractVisiblePostsOptions {
   root?: ParentNode;
   minTextLength?: number;
   maxPosts?: number;
+  lookaheadPixels?: number;
   now?: Date;
 }
 
@@ -90,11 +91,12 @@ export async function getVisiblePostEntries({
   root = document,
   minTextLength = 50,
   maxPosts = 12,
+  lookaheadPixels = 0,
   now = new Date()
 }: ExtractVisiblePostsOptions = {}): Promise<Array<{ element: HTMLElement; post: ExtractedPost }>> {
   const candidates = Array.from(root.querySelectorAll<HTMLElement>(POST_SELECTORS))
     .filter((element) => !hasAncestorPost(element))
-    .filter(isVisiblePost);
+    .filter((element) => isVisiblePost(element, lookaheadPixels));
 
   const entries: Array<{ element: HTMLElement; post: ExtractedPost }> = [];
   const seen = new Set<string>();
@@ -155,18 +157,19 @@ export function extractPostText(element: HTMLElement): string {
   return uniqueLines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
 }
 
-export function isVisiblePost(element: HTMLElement): boolean {
+export function isVisiblePost(element: HTMLElement, lookaheadPixels = 0): boolean {
   const rect = element.getBoundingClientRect();
   const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
   const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
   const style = window.getComputedStyle(element);
+  const viewportBottom = viewportHeight + Math.max(0, lookaheadPixels);
 
   return (
     rect.width > 0 &&
     rect.height > 0 &&
     rect.bottom > 0 &&
     rect.right > 0 &&
-    rect.top < viewportHeight &&
+    rect.top < viewportBottom &&
     rect.left < viewportWidth &&
     style.display !== "none" &&
     style.visibility !== "hidden" &&

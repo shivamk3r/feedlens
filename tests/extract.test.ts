@@ -1,19 +1,23 @@
 import { describe, expect, it } from "vitest";
 import { extractPostText, getVisiblePostEntries } from "../src/content/extract";
 
-function visible(element: HTMLElement): void {
+function positioned(element: HTMLElement, top: number, bottom: number): void {
   element.getBoundingClientRect = () =>
     ({
       width: 540,
-      height: 320,
-      top: 80,
+      height: bottom - top,
+      top,
       left: 20,
       right: 560,
-      bottom: 400,
+      bottom,
       x: 20,
-      y: 80,
+      y: top,
       toJSON: () => ({})
     }) as DOMRect;
+}
+
+function visible(element: HTMLElement): void {
+  positioned(element, 80, 400);
 }
 
 describe("LinkedIn post extraction", () => {
@@ -109,5 +113,27 @@ describe("LinkedIn post extraction", () => {
     expect(entries[0]?.post.text).not.toContain("Like");
     expect(entries[0]?.post.text).not.toContain("visible comment");
     expect(entries[0]?.post.text).not.toContain("Play Video");
+  });
+
+  it("can include nearby below-viewport posts for background pre-analysis", async () => {
+    document.body.innerHTML = `
+      <main>
+        <div class="feed-shared-update-v2" data-urn="urn:li:activity:nearby">
+          <div class="update-components-text">
+            This post starts just below the viewport but is already loaded in the DOM,
+            so FeedLens can analyze it shortly before the user scrolls it into view.
+          </div>
+        </div>
+      </main>
+    `;
+
+    const post = document.querySelector<HTMLElement>(".feed-shared-update-v2");
+    expect(post).toBeTruthy();
+    positioned(post as HTMLElement, window.innerHeight + 120, window.innerHeight + 420);
+
+    await expect(getVisiblePostEntries({ maxPosts: 5 })).resolves.toHaveLength(0);
+    await expect(
+      getVisiblePostEntries({ maxPosts: 5, lookaheadPixels: 500 })
+    ).resolves.toHaveLength(1);
   });
 });
