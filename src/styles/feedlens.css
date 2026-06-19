@@ -182,6 +182,29 @@ textarea {
   padding-top: 10px;
 }
 
+.fl-debug-log__title {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.fl-debug-log__payload {
+  overflow: auto;
+  max-height: 220px;
+  margin: 0;
+  border: 1px solid var(--fl-border);
+  border-radius: 8px;
+  background: #f6f8f7;
+  color: #243029;
+  padding: 10px;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
 .fl-button {
   display: inline-flex;
   min-height: 34px;

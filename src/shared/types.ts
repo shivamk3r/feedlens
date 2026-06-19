@@ -94,6 +94,26 @@ export interface SessionResult {
   hidden?: boolean;
 }
 
+export type DebugLogSource = "content" | "background" | "gemini" | "popup" | "debug";
+export type DebugLogSeverity = "debug" | "info" | "warn" | "error";
+export type DebugLogPayload = Record<string, string | number | boolean>;
+
+export interface DebugLogEntry {
+  id: string;
+  createdAt: string;
+  source: DebugLogSource;
+  severity: DebugLogSeverity;
+  event: string;
+  payload?: DebugLogPayload;
+}
+
+export interface AppendDebugLogRequest {
+  source: DebugLogSource;
+  severity?: DebugLogSeverity;
+  event: string;
+  payload?: Record<string, unknown>;
+}
+
 export interface SetupStatus {
   settings: FeedLensSettings;
   hasApiKey: boolean;
@@ -164,7 +184,10 @@ export type BackgroundMessage =
   | { type: "feedlens:getSessionResults" }
   | { type: "feedlens:hideResult"; payload: { hash: string } }
   | { type: "feedlens:setFeedback"; payload: { hash: string; feedback: "useful" | "not_useful" } }
-  | { type: "feedlens:selectResult"; payload: { hash: string } };
+  | { type: "feedlens:selectResult"; payload: { hash: string } }
+  | { type: "feedlens:getDebugLogs" }
+  | { type: "feedlens:clearDebugLogs" }
+  | { type: "feedlens:appendDebugLog"; payload: AppendDebugLogRequest };
 
 export type ContentMessage =
   | { type: "feedlens-content:getState" }

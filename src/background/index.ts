@@ -1,4 +1,5 @@
 import { analyzePost, clearCache, validateGeminiApiKey } from "./gemini";
+import { appendDebugLog, clearDebugLogs, getDebugLogs } from "../shared/debug";
 import { ERROR_MESSAGES } from "../shared/defaults";
 import {
   getSessionResults,
@@ -58,6 +59,17 @@ async function handleMessage(message: BackgroundMessage): Promise<unknown> {
 
     case "feedlens:selectResult":
       await selectResult(message.payload.hash);
+      return { ok: true };
+
+    case "feedlens:getDebugLogs":
+      return { ok: true, logs: await getDebugLogs() };
+
+    case "feedlens:clearDebugLogs":
+      await clearDebugLogs();
+      return { ok: true };
+
+    case "feedlens:appendDebugLog":
+      await appendDebugLog(message.payload);
       return { ok: true };
 
     default:

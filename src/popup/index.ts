@@ -1,4 +1,5 @@
 import { saveSettings } from "../shared/storage";
+import { isDebugLoggingEnabled } from "../shared/debug";
 import { hydrateIcons } from "../shared/icons";
 import type { ContentState, SetupStatus } from "../shared/types";
 import { escapeHtml, sendActiveTabMessage, sendBackgroundMessage } from "../shared/ui";
@@ -67,6 +68,13 @@ async function render(state: PopupState = {}): Promise<void> {
           <button class="fl-button" id="feedlens-options">
             <i data-lucide="settings"></i>Settings
           </button>
+          ${
+            isDebugLoggingEnabled()
+              ? `<button class="fl-button" id="feedlens-debug">
+                  <i data-lucide="bug"></i>Debug logs
+                </button>`
+              : ""
+          }
         </div>
       </div>
       <div class="fl-card">
@@ -101,6 +109,10 @@ function renderPageState(page?: ContentState): string {
 function bindActions(status: SetupStatus, page?: ContentState): void {
   root?.querySelector("#feedlens-options")?.addEventListener("click", () => {
     void chrome.runtime.openOptionsPage();
+  });
+
+  root?.querySelector("#feedlens-debug")?.addEventListener("click", () => {
+    void chrome.tabs.create({ url: chrome.runtime.getURL("debug.html") });
   });
 
   root?.querySelector("#feedlens-sidepanel")?.addEventListener("click", () => {

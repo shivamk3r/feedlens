@@ -56,6 +56,7 @@ flowchart TD
 | Gemini key | `chrome.storage.local` | Persistent | Stored only in Chrome extension storage on the user's device. |
 | Analysis cache | `chrome.storage.local` | Persistent | Stores structured result by hash/model/prompt version, not raw text. |
 | Session result list | `chrome.storage.session` | Browser session | Stores result plus short snippet for side panel review. |
+| Debug logs | `chrome.storage.session` | Browser session | Development builds only. Stores sanitized event metadata, not raw post text, API keys, Gemini request/response bodies, authors, URLs, snippets, summaries, or evidence quotes. |
 
 ## Gemini Integration
 
@@ -92,5 +93,7 @@ The build script bundles:
 - `assets/content.js` as a single classic content-script bundle.
 - `assets/popup.js`, `assets/options.js`, and `assets/sidepanel.js` as page scripts.
 - `assets/feedlens.css` as shared extension and content-script CSS.
+
+`npm run build:dev` additionally emits `debug.html` and `assets/debug.js` for local development diagnostics. Production builds do not include the debug page or debug bundle.
 
 No `.env` value is read by the build script, and `.env` files are ignored by git.

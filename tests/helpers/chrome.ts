@@ -42,6 +42,7 @@ class MemoryStorageArea {
 
 export interface ChromeMock {
   runtime: {
+    getURL: ReturnType<typeof vi.fn>;
     openOptionsPage: ReturnType<typeof vi.fn>;
     sendMessage: ReturnType<typeof vi.fn>;
     onInstalled: { addListener: ReturnType<typeof vi.fn> };
@@ -57,6 +58,7 @@ export interface ChromeMock {
     onChanged: { addListener: ReturnType<typeof vi.fn> };
   };
   tabs: {
+    create: ReturnType<typeof vi.fn>;
     query: ReturnType<typeof vi.fn>;
     sendMessage: ReturnType<typeof vi.fn>;
   };
@@ -65,6 +67,7 @@ export interface ChromeMock {
 export function createChromeMock(): ChromeMock {
   return {
     runtime: {
+      getURL: vi.fn((path: string) => `chrome-extension://feedlens/${path}`),
       openOptionsPage: vi.fn(async () => undefined),
       sendMessage: vi.fn(async () => undefined),
       onInstalled: { addListener: vi.fn() },
@@ -80,6 +83,7 @@ export function createChromeMock(): ChromeMock {
       onChanged: { addListener: vi.fn() }
     },
     tabs: {
+      create: vi.fn(async () => undefined),
       query: vi.fn(async () => [{ id: 1, windowId: 1, url: "https://www.linkedin.com/feed/" }]),
       sendMessage: vi.fn(async () => undefined)
     }

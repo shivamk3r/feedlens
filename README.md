@@ -60,6 +60,12 @@ Build the extension:
 npm run build
 ```
 
+Build the extension with the dev-only debug log page:
+
+```sh
+npm run build:dev
+```
+
 Load `dist/` in Chrome for local developer testing:
 
 1. Open `chrome://extensions`.
@@ -68,6 +74,8 @@ Load `dist/` in Chrome for local developer testing:
 4. Select this repository's `dist/` directory.
 5. Open the FeedLens options page and enter your Gemini API key.
 6. Accept the in-extension privacy notice before analyzing visible posts.
+
+When using a development build, the popup includes a Debug logs button. Debug logs are session-only and intentionally omit raw post text, API keys, Gemini request/response bodies, author names, URLs, snippets, summaries, and evidence quotes.
 
 For local test tooling only, copy `.env-example` to `.env` and set `GEMINI_API_KEY`. Do not commit `.env`, print real keys, or bundle `.env` values into extension assets.
 

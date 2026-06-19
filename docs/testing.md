@@ -14,6 +14,12 @@ This runs:
 2. `npm run test`
 3. `npm run build`
 
+For changes to the development-only debug log page, also run:
+
+```sh
+npm run build:dev
+```
+
 Additional repository checks before committing or release:
 
 ```sh
@@ -55,6 +61,7 @@ CLAUDE.md -> AGENTS.md
 
 - Do not inspect or print `.env`.
 - Confirm `dist/` does not contain `GEMINI_API_KEY` values.
+- In development builds, confirm debug logs do not contain raw post text, API keys, Gemini request/response bodies, authors, URLs, snippets, summaries, or evidence quotes.
 - Confirm `README.md`, `PRIVACY.md`, and `DISCLAIMER.md` frame installation as local developer testing, not Chrome Web Store publication.
 - Confirm content script requests analysis through the background worker.
 - Confirm content script code does not read `chrome.storage` keys directly.

@@ -1,3 +1,4 @@
+import { appendDebugLog } from "../shared/debug";
 import { ERROR_MESSAGES } from "../shared/defaults";
 import { createCacheKey } from "../shared/hash";
 import { buildGeminiRequestBody } from "../shared/prompt";
@@ -41,9 +42,21 @@ export async function analyzePost({
   post,
   force = false
 }: AnalyzePostRequest): Promise<AnalyzePostResponse> {
+  await appendDebugLog({
+    source: "background",
+    event: "analyze_start",
+    payload: { hash: post.hash, force }
+  });
+
   const settings = await getSettings();
 
   if (!settings.enabled) {
+    await appendDebugLog({
+      source: "background",
+      severity: "warn",
+      event: "analyze_blocked",
+      payload: { hash: post.hash, code: "disabled" }
+    });
     return {
       ok: false,
       hash: post.hash,
@@ -52,6 +65,12 @@ export async function analyzePost({
   }
 
   if (!settings.privacyAccepted) {
+    await appendDebugLog({
+      source: "background",
+      severity: "warn",
+      event: "analyze_blocked",
+      payload: { hash: post.hash, code: "privacy_not_accepted" }
+    });
     return {
       ok: false,
       hash: post.hash,
@@ -65,6 +84,12 @@ export async function analyzePost({
 
   const apiKey = await getApiKey(settings);
   if (!apiKey) {
+    await appendDebugLog({
+      source: "background",
+      severity: "warn",
+      event: "analyze_blocked",
+      payload: { hash: post.hash, code: "missing_api_key" }
+    });
     return {
       ok: false,
       hash: post.hash,
@@ -76,6 +101,11 @@ export async function analyzePost({
   if (settings.storeCache && !force) {
     const cached = await getCacheEntry(cacheKey);
     if (cached) {
+      await appendDebugLog({
+        source: "background",
+        event: "cache_hit",
+        payload: { hash: post.hash, model: cached.model, version: cached.promptVersion }
+      });
       await putSessionResult({
         hash: post.hash,
         postId: post.postId,
@@ -94,6 +124,11 @@ export async function analyzePost({
   }
 
   try {
+    await appendDebugLog({
+      source: "background",
+      event: "cache_miss",
+      payload: { hash: post.hash, model: settings.model, version: PROMPT_VERSION }
+    });
     const result = await callGemini(post.text, settings, apiKey);
     const createdAt = new Date().toISOString();
 
@@ -120,12 +155,30 @@ export async function analyzePost({
       source: "gemini"
     });
 
+    await appendDebugLog({
+      source: "background",
+      event: "analyze_success",
+      payload: {
+        hash: post.hash,
+        marker: result.marker,
+        confidence: result.confidence,
+        signalCount: result.signals.length
+      }
+    });
+
     return { ok: true, hash: post.hash, result, source: "gemini" };
   } catch (error) {
+    const normalized = normalizeGeminiError(error);
+    await appendDebugLog({
+      source: "background",
+      severity: normalized.retryable ? "warn" : "error",
+      event: "analyze_error",
+      payload: { hash: post.hash, code: normalized.code, retryable: normalized.retryable }
+    });
     return {
       ok: false,
       hash: post.hash,
-      error: normalizeGeminiError(error)
+      error: normalized
     };
   }
 }
@@ -147,9 +200,20 @@ export async function validateGeminiApiKey(
   try {
     const settings = await getSettings();
     await callGemini(VALIDATION_POST_TEXT, settings, trimmed, fetchImpl);
+    await appendDebugLog({
+      source: "gemini",
+      event: "key_validation_success",
+      payload: { model: settings.model }
+    });
     return { ok: true, checkedAt: new Date().toISOString() };
   } catch (error) {
     const normalized = normalizeGeminiError(error);
+    await appendDebugLog({
+      source: "gemini",
+      severity: normalized.retryable ? "warn" : "error",
+      event: "key_validation_error",
+      payload: { code: normalized.code, retryable: normalized.retryable }
+    });
     return {
       ok: false,
       error: {
@@ -170,6 +234,11 @@ export async function callGemini(
   fetchImpl: typeof fetch = fetch
 ) {
   const model = settings.model.replace(/^models\//, "");
+  await appendDebugLog({
+    source: "gemini",
+    event: "gemini_request_start",
+    payload: { model, chars: postText.length }
+  });
   const response = await fetchImpl(`${GEMINI_ENDPOINT}/${encodeURIComponent(model)}:generateContent`, {
     method: "POST",
     headers: {
@@ -180,6 +249,12 @@ export async function callGemini(
   });
 
   if (!response.ok) {
+    await appendDebugLog({
+      source: "gemini",
+      severity: response.status === 429 || response.status >= 500 ? "warn" : "error",
+      event: "gemini_http_error",
+      payload: { model, status: response.status }
+    });
     throw await geminiHttpError(response);
   }
 
@@ -191,12 +266,38 @@ export async function callGemini(
     .trim();
 
   if (!text) {
+    await appendDebugLog({
+      source: "gemini",
+      severity: "warn",
+      event: "gemini_invalid_response",
+      payload: { model, reason: "missing_text" }
+    });
     throw new Error("Gemini response did not contain text.");
   }
 
   try {
-    return validateAnalysisResult(parseAnalysisJson(text));
+    const result = validateAnalysisResult(parseAnalysisJson(text));
+    await appendDebugLog({
+      source: "gemini",
+      event: "gemini_success",
+      payload: {
+        model,
+        marker: result.marker,
+        confidence: result.confidence,
+        signalCount: result.signals.length
+      }
+    });
+    return result;
   } catch (error) {
+    await appendDebugLog({
+      source: "gemini",
+      severity: "warn",
+      event: "gemini_invalid_response",
+      payload: {
+        model,
+        reason: error instanceof Error ? error.name || "validation_error" : "validation_error"
+      }
+    });
     const invalid = new Error(
       error instanceof Error ? error.message : "Gemini returned invalid JSON."
     );
