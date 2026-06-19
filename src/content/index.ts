@@ -21,6 +21,9 @@ interface VisiblePostState {
 }
 
 const visiblePosts = new Map<string, VisiblePostState>();
+const POST_LOOKAHEAD_VIEWPORT_RATIO = 1;
+const MIN_POST_LOOKAHEAD_PIXELS = 600;
+const MAX_POST_LOOKAHEAD_PIXELS = 1600;
 let settings: FeedLensSettings | undefined;
 let hasApiKey = false;
 let manualPaused = false;
@@ -125,7 +128,10 @@ async function scanVisible({ force, manual }: { force: boolean; manual: boolean 
     return;
   }
 
-  const entries = await getVisiblePostEntries({ maxPosts: settings.maxVisiblePostsPerRun });
+  const entries = await getVisiblePostEntries({
+    maxPosts: settings.maxVisiblePostsPerRun,
+    lookaheadPixels: manual ? 0 : getPostLookaheadPixels()
+  });
   if (!entries.length) {
     if (manual) {
       lastError = ERROR_MESSAGES.noPosts;
@@ -238,6 +244,18 @@ function isAutoAnalysisAllowed(currentSettings: FeedLensSettings): boolean {
     currentSettings.privacyAccepted &&
     hasApiKey &&
     !manualPaused
+  );
+}
+
+function getPostLookaheadPixels(): number {
+  const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+  if (!viewportHeight) {
+    return 0;
+  }
+
+  return Math.min(
+    MAX_POST_LOOKAHEAD_PIXELS,
+    Math.max(MIN_POST_LOOKAHEAD_PIXELS, Math.round(viewportHeight * POST_LOOKAHEAD_VIEWPORT_RATIO))
   );
 }
 
