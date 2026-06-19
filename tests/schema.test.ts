@@ -27,6 +27,46 @@ describe("analysis schema validation", () => {
     expect(validateAnalysisResult(parsed)).toEqual(validResult);
   });
 
+  it("parses a JSON object from wrapped Gemini text", () => {
+    const parsed = parseAnalysisJson(
+      `Here is the FeedLens analysis:\n\`\`\`json\n${JSON.stringify(validResult)}\n\`\`\`\nDone.`
+    );
+
+    expect(validateAnalysisResult(parsed)).toEqual(validResult);
+  });
+
+  it("normalizes harmless enum casing and numeric score strings", () => {
+    const parsed = validateAnalysisResult({
+      ...validResult,
+      marker: "Yellow",
+      confidence: "Medium",
+      information_quality_score: "61",
+      signals: [
+        {
+          type: "Missing Evidence",
+          severity: "Medium",
+          evidence: "everyone should do this",
+          explanation: "The phrase is broad and does not provide support."
+        },
+        {
+          type: "unsupported_claims",
+          severity: "medium",
+          evidence: "top performers",
+          explanation: "This alias is not part of the FeedLens schema."
+        }
+      ]
+    });
+
+    expect(parsed).toEqual(validResult);
+  });
+
+  it("accepts otherwise valid results without signal objects", () => {
+    expect(validateAnalysisResult({ ...validResult, signals: undefined })).toEqual({
+      ...validResult,
+      signals: []
+    });
+  });
+
   it("rejects unsupported markers", () => {
     expect(() => validateAnalysisResult({ ...validResult, marker: "dangerous" })).toThrow(
       /marker/
