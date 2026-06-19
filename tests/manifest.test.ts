@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 
 describe("extension manifest and privacy guardrails", () => {
   it("keeps permissions narrow and Gemini-only", () => {
@@ -11,6 +11,23 @@ describe("extension manifest and privacy guardrails", () => {
       "https://generativelanguage.googleapis.com/*",
       "https://www.linkedin.com/*"
     ]);
+  });
+
+  it("configures Chrome extension icons with committed assets", () => {
+    const manifest = JSON.parse(readFileSync("public/manifest.json", "utf8"));
+    const expectedIcons = {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    };
+
+    expect(manifest.icons).toEqual(expectedIcons);
+    expect(manifest.action.default_icon).toEqual(expectedIcons);
+
+    for (const iconPath of Object.values(expectedIcons)) {
+      expect(existsSync(`public/${iconPath}`)).toBe(true);
+    }
   });
 
   it("does not reference non-MVP providers in source provider code", () => {
