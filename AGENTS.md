@@ -16,6 +16,7 @@ This repository builds **FeedLens**, a privacy-first Chrome extension for scorin
 ## Build and Release Packaging
 
 - For agent-created local browser testing or debugging `dist/` output, use `npm run build:dev` so the dev-only debug log page is available.
+- For local non-release agent work, if you run `npm run verify` or `npm run build`, run `npm run build:dev` afterward so the final local `dist/` output remains debug-enabled for browser testing.
 - For GitHub release assets, use `npm run build` and treat that production build as the only release-packaging source.
 - Never publish, upload, or attach a debug-mode `dist/` output to a GitHub release.
 
