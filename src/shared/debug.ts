@@ -15,6 +15,7 @@ const RISKY_PAYLOAD_KEYS = new Set([
   "author",
   "url"
 ]);
+const SAFE_DIAGNOSTIC_PAYLOAD_KEYS = new Set(["hastext", "textlength", "promptblockreason"]);
 
 export function isDebugLoggingEnabled(): boolean {
   return process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test";
@@ -117,6 +118,10 @@ function normalizePayloadKey(key: string): string {
 
 function isRiskyPayloadKey(key: string): boolean {
   const normalized = normalizePayloadKey(key);
+  if (SAFE_DIAGNOSTIC_PAYLOAD_KEYS.has(normalized)) {
+    return false;
+  }
+
   return Array.from(RISKY_PAYLOAD_KEYS).some((riskyKey) => normalized.includes(riskyKey));
 }
 

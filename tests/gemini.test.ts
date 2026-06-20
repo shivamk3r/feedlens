@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { analyzePost, callGemini, validateGeminiApiKey } from "../src/background/gemini";
 import { DEFAULT_SETTINGS } from "../src/shared/defaults";
+import { getDebugLogs } from "../src/shared/debug";
 import { saveApiKey, saveSettings } from "../src/shared/storage";
 import type { AnalysisResult, ExtractedPost } from "../src/shared/types";
 
@@ -64,34 +65,103 @@ describe("Gemini analysis service", () => {
   });
 
   it("maps Gemini rate limits to a retryable FeedLens error", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () =>
-        Response.json({ error: { message: "quota exceeded" } }, { status: 429 })
-      )
+    const fetchImpl = vi.fn(async () =>
+      Response.json({ error: { message: "quota exceeded" } }, { status: 429 })
     );
+    vi.stubGlobal("fetch", fetchImpl);
 
     const response = await analyzePost({ post, force: true });
     expect(response).toMatchObject({
       ok: false,
       error: { code: "rate_limited", retryable: true }
     });
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
 
   it("rejects invalid model JSON as an invalid response", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () =>
-        Response.json({
-          candidates: [{ content: { parts: [{ text: JSON.stringify({ marker: "red" }) }] } }]
-        })
-      )
+    const fetchImpl = vi.fn(async () =>
+      Response.json({
+        candidates: [
+          {
+            finishReason: "STOP",
+            safetyRatings: [{}],
+            content: { parts: [{ text: JSON.stringify({ marker: "red" }) }] }
+          }
+        ],
+        promptFeedback: { blockReason: "none", safetyRatings: [{}] }
+      })
     );
+    vi.stubGlobal("fetch", fetchImpl);
 
     const response = await analyzePost({ post, force: true });
     expect(response).toMatchObject({
       ok: false,
       error: { code: "invalid_response", retryable: true }
+    });
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+
+    const invalidLog = (await getDebugLogs()).find(
+      (log) => log.event === "gemini_invalid_response"
+    );
+    expect(invalidLog?.payload).toMatchObject({
+      attempt: 2,
+      maxAttempts: 2,
+      candidateCount: 1,
+      partCount: 1,
+      finishReason: "STOP",
+      safetyRatingCount: 2,
+      promptBlockReason: "none",
+      textLength: JSON.stringify({ marker: "red" }).length,
+      hasText: true,
+      hasBalancedObject: true,
+      parseCategory: "validation_error"
+    });
+    const serializedLogs = JSON.stringify(await getDebugLogs());
+    expect(serializedLogs).not.toContain(post.text);
+    expect(serializedLogs).not.toContain("gemini-test-key");
+    expect(serializedLogs).not.toContain(validAnalysis.summary);
+    expect(serializedLogs).not.toContain(validAnalysis.signals[0]?.evidence);
+  });
+
+  it("retries once when Gemini returns malformed JSON and then succeeds", async () => {
+    const fetchImpl = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        Response.json({
+          candidates: [
+            {
+              finishReason: "MAX_TOKENS",
+              content: { parts: [{ text: '{"marker":"red"' }] }
+            }
+          ]
+        })
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          candidates: [{ content: { parts: [{ text: JSON.stringify(validAnalysis) }] } }]
+        })
+      );
+    vi.stubGlobal("fetch", fetchImpl);
+
+    const response = await analyzePost({ post, force: true });
+
+    expect(response).toMatchObject({
+      ok: true,
+      result: validAnalysis
+    });
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+
+    const logs = await getDebugLogs();
+    expect(logs.find((log) => log.event === "analyze_retry")?.payload).toMatchObject({
+      hash: post.hash,
+      code: "invalid_response",
+      attempt: 1,
+      nextAttempt: 2,
+      maxAttempts: 2
+    });
+    expect(logs.find((log) => log.event === "gemini_success")?.payload).toMatchObject({
+      attempt: 2,
+      maxAttempts: 2
     });
   });
 

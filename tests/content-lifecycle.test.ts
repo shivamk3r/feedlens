@@ -1,6 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_SETTINGS } from "../src/shared/defaults";
-import type { ExtractedPost, SetupStatus } from "../src/shared/types";
+import type {
+  AnalysisResult,
+  AnalyzePostResponse,
+  BackgroundMessage,
+  ExtractedPost,
+  SetupStatus
+} from "../src/shared/types";
 import { getChromeMock } from "./helpers/chrome";
 
 const setupStatus: SetupStatus = {
@@ -27,6 +33,26 @@ interface VisiblePostEntry {
   element: HTMLElement;
   post: ExtractedPost;
 }
+
+const validAnalysis: AnalysisResult = {
+  marker: "yellow",
+  confidence: "medium",
+  information_quality_score: 45,
+  misinformation_risk_score: 35,
+  manipulation_pressure_score: 20,
+  overall_risk_score: 40,
+  summary: "The post has useful information but limited sourcing.",
+  signals: [
+    {
+      type: "missing_evidence",
+      severity: "medium",
+      evidence: "needs context",
+      explanation: "The post asks for care but does not include sources."
+    }
+  ],
+  counter_reading: "It may be intentionally concise.",
+  suggested_user_action: "Look for source links before relying on the claim."
+};
 
 afterEach(() => {
   vi.doUnmock("../src/content/extract");
@@ -76,6 +102,88 @@ describe("content script extension lifecycle", () => {
 
     expect(chromeMock.runtime.sendMessage).toHaveBeenCalledTimes(callCountAfterInvalidation);
   });
+
+  it("backs off automatic invalid-response retries but allows manual reanalysis", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-17T00:00:00.000Z"));
+    const entry = makeVisiblePostEntry();
+    const analysisResponses: AnalyzePostResponse[] = [
+      {
+        ok: false,
+        hash: entry.post.hash,
+        error: {
+          code: "invalid_response",
+          message: "Gemini returned an invalid response. Try again in a moment.",
+          retryable: true
+        }
+      },
+      {
+        ok: true,
+        hash: entry.post.hash,
+        result: validAnalysis,
+        source: "gemini"
+      }
+    ];
+    const chromeMock = await loadContentScriptWithRuntime(entriesOf(entry), async (message) => {
+      if (message.type === "feedlens:getStatus") {
+        return setupStatus;
+      }
+      if (message.type === "feedlens:analyzePost") {
+        return analysisResponses.shift();
+      }
+      return { ok: true };
+    });
+
+    await vi.advanceTimersByTimeAsync(500);
+    await flushMicrotasks();
+    expect(countRuntimeMessages(chromeMock, "feedlens:analyzePost")).toBe(1);
+
+    window.dispatchEvent(new Event("scroll"));
+    await vi.advanceTimersByTimeAsync(500);
+    await flushMicrotasks();
+    expect(countRuntimeMessages(chromeMock, "feedlens:analyzePost")).toBe(1);
+
+    const sendResponse = vi.fn();
+    getContentMessageListener()(
+      { type: "feedlens-content:reanalyzeVisible" },
+      {} as chrome.runtime.MessageSender,
+      sendResponse
+    );
+    await flushMicrotasks();
+
+    expect(countRuntimeMessages(chromeMock, "feedlens:analyzePost")).toBe(2);
+  });
+
+  it("does not back off non-retryable analysis errors", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-17T00:00:00.000Z"));
+    const entry = makeVisiblePostEntry();
+    const chromeMock = await loadContentScriptWithRuntime(entriesOf(entry), async (message) => {
+      if (message.type === "feedlens:getStatus") {
+        return setupStatus;
+      }
+      if (message.type === "feedlens:analyzePost") {
+        return {
+          ok: false,
+          hash: entry.post.hash,
+          error: {
+            code: "provider_error",
+            message: "Gemini returned an error. Check your API key, billing status, or rate limits.",
+            retryable: false
+          }
+        };
+      }
+      return { ok: true };
+    });
+
+    await vi.advanceTimersByTimeAsync(500);
+    await flushMicrotasks();
+    window.dispatchEvent(new Event("scroll"));
+    await vi.advanceTimersByTimeAsync(500);
+    await flushMicrotasks();
+
+    expect(countRuntimeMessages(chromeMock, "feedlens:analyzePost")).toBeGreaterThan(1);
+  });
 });
 
 async function loadContentScriptWithEntries(entries: VisiblePostEntry[]) {
@@ -99,6 +207,36 @@ async function loadContentScriptWithEntries(entries: VisiblePostEntry[]) {
   await import("../src/content/index");
   await flushMicrotasks();
   return chromeMock;
+}
+
+async function loadContentScriptWithRuntime(
+  entries: VisiblePostEntry[],
+  sendMessage: (message: BackgroundMessage) => Promise<unknown>
+) {
+  vi.resetModules();
+  vi.stubEnv("NODE_ENV", "production");
+  vi.doMock("../src/content/extract", async () => {
+    const actual = await vi.importActual<typeof import("../src/content/extract")>(
+      "../src/content/extract"
+    );
+
+    return {
+      ...actual,
+      getCurrentPlatformAdapter: vi.fn(() => actual.getPlatformAdapter("x")),
+      getVisiblePostEntries: vi.fn(async () => entries),
+      isSupportedPlatformPage: vi.fn(() => true)
+    };
+  });
+
+  const chromeMock = getChromeMock();
+  chromeMock.runtime.sendMessage.mockImplementation(sendMessage);
+  await import("../src/content/index");
+  await flushMicrotasks();
+  return chromeMock;
+}
+
+function entriesOf(entry: VisiblePostEntry): VisiblePostEntry[] {
+  return [entry];
 }
 
 function makeVisiblePostEntry(): VisiblePostEntry {
@@ -131,9 +269,30 @@ function getStorageChangedListener(): (
   ) => void;
 }
 
+function getContentMessageListener(): (
+  message: unknown,
+  sender: chrome.runtime.MessageSender,
+  sendResponse: (response?: unknown) => void
+) => true {
+  const listener = getChromeMock().runtime.onMessage.addListener.mock.calls[0]?.[0];
+  expect(listener).toBeTypeOf("function");
+  return listener as (
+    message: unknown,
+    sender: chrome.runtime.MessageSender,
+    sendResponse: (response?: unknown) => void
+  ) => true;
+}
+
+function countRuntimeMessages(chromeMock: ReturnType<typeof getChromeMock>, type: string): number {
+  return chromeMock.runtime.sendMessage.mock.calls.filter(
+    ([message]) => (message as { type?: string } | undefined)?.type === type
+  ).length;
+}
+
 async function flushMicrotasks(): Promise<void> {
-  await Promise.resolve();
-  await Promise.resolve();
+  for (let index = 0; index < 5; index += 1) {
+    await Promise.resolve();
+  }
 }
 
 function collectUnhandledRejections(): {

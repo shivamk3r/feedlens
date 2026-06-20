@@ -27,6 +27,24 @@ const signalTypes = new Set<SignalType>([
   "emotional_storytelling"
 ]);
 
+export type AnalysisJsonParseCategory =
+  | "missing_text"
+  | "no_json_object"
+  | "likely_truncated"
+  | "json_fence"
+  | "syntax_error"
+  | "json_object";
+
+export interface AnalysisJsonDiagnostics {
+  textLength: number;
+  hasText: boolean;
+  hasBalancedObject: boolean;
+  hasJsonFence: boolean;
+  startsWithJsonObject: boolean;
+  endsWithJsonObject: boolean;
+  parseCategory: AnalysisJsonParseCategory;
+}
+
 export const analysisResponseSchema = {
   type: "object",
   additionalProperties: false,
@@ -151,6 +169,32 @@ export function parseAnalysisJson(text: string): unknown {
   }
 
   throw lastError instanceof Error ? lastError : new SyntaxError("No valid JSON object found.");
+}
+
+export function getAnalysisJsonDiagnostics(text: string | undefined): AnalysisJsonDiagnostics {
+  const trimmed = text?.trim() ?? "";
+  const hasText = trimmed.length > 0;
+  const hasJsonFence = /```(?:json)?\s*[\s\S]*?```/i.test(trimmed);
+  const startsWithJsonObject = trimmed.startsWith("{");
+  const endsWithJsonObject = trimmed.endsWith("}");
+  const hasBalancedObject = Boolean(findFirstBalancedJsonObject(trimmed));
+
+  return {
+    textLength: trimmed.length,
+    hasText,
+    hasBalancedObject,
+    hasJsonFence,
+    startsWithJsonObject,
+    endsWithJsonObject,
+    parseCategory: getParseCategory({
+      hasText,
+      hasBalancedObject,
+      hasJsonFence,
+      startsWithJsonObject,
+      endsWithJsonObject,
+      text: trimmed
+    })
+  };
 }
 
 export function validateAnalysisResult(value: unknown): AnalysisResult {
@@ -350,6 +394,44 @@ function findFirstBalancedJsonObject(text: string): string | undefined {
   }
 
   return undefined;
+}
+
+function getParseCategory({
+  hasText,
+  hasBalancedObject,
+  hasJsonFence,
+  startsWithJsonObject,
+  endsWithJsonObject,
+  text
+}: {
+  hasText: boolean;
+  hasBalancedObject: boolean;
+  hasJsonFence: boolean;
+  startsWithJsonObject: boolean;
+  endsWithJsonObject: boolean;
+  text: string;
+}): AnalysisJsonParseCategory {
+  if (!hasText) {
+    return "missing_text";
+  }
+
+  if (!text.includes("{")) {
+    return "no_json_object";
+  }
+
+  if (!hasBalancedObject && (startsWithJsonObject || hasJsonFence) && !endsWithJsonObject) {
+    return "likely_truncated";
+  }
+
+  if (hasJsonFence) {
+    return "json_fence";
+  }
+
+  if (hasBalancedObject) {
+    return "json_object";
+  }
+
+  return "syntax_error";
 }
 
 function normalizeEnumValue(value: string): string {

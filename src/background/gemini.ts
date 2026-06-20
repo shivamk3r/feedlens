@@ -3,7 +3,11 @@ import { ERROR_MESSAGES } from "../shared/defaults";
 import { createCacheKey } from "../shared/hash";
 import { platformLabel } from "../shared/platforms";
 import { buildGeminiRequestBody } from "../shared/prompt";
-import { parseAnalysisJson, validateAnalysisResult } from "../shared/schema";
+import {
+  getAnalysisJsonDiagnostics,
+  parseAnalysisJson,
+  validateAnalysisResult
+} from "../shared/schema";
 import {
   clearCache,
   getApiKey,
@@ -13,21 +17,29 @@ import {
 } from "../shared/storage";
 import {
   PROMPT_VERSION,
+  type AnalysisResult,
   type AnalyzePostRequest,
   type AnalyzePostResponse,
   type ValidateApiKeyResponse
 } from "../shared/types";
 
 const GEMINI_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models";
+const POST_ANALYSIS_MAX_ATTEMPTS = 2;
 const VALIDATION_POST_TEXT =
   "FeedLens connection check: A team shared a neutral project update with two specific results and no urgent claim.";
 
 interface GeminiGenerateContentResponse {
   candidates?: Array<{
+    finishReason?: string;
+    safetyRatings?: unknown[];
     content?: {
       parts?: Array<{ text?: string }>;
     };
   }>;
+  promptFeedback?: {
+    blockReason?: string;
+    safetyRatings?: unknown[];
+  };
 }
 
 interface GeminiErrorResponse {
@@ -36,6 +48,11 @@ interface GeminiErrorResponse {
     message?: string;
     status?: string;
   };
+}
+
+interface GeminiCallOptions {
+  attempt?: number;
+  maxAttempts?: number;
 }
 
 export async function analyzePost({
@@ -117,7 +134,13 @@ export async function analyzePost({
       event: "cache_miss",
       payload: { hash: post.hash, model: settings.model, version: PROMPT_VERSION }
     });
-    const result = await callGemini(post.text, settings, apiKey, platformLabel(post.platform));
+    const result = await callGeminiForPostWithRetry(
+      post.text,
+      settings,
+      apiKey,
+      platformLabel(post.platform),
+      post.hash
+    );
     const createdAt = new Date().toISOString();
 
     if (settings.storeCache) {
@@ -207,17 +230,20 @@ export async function callGemini(
   settings: Awaited<ReturnType<typeof getSettings>>,
   apiKey: string,
   fetchImplOrPlatformLabel: typeof fetch | string = fetch,
-  maybePlatformLabel?: string
-) {
+  maybePlatformLabel?: string,
+  options: GeminiCallOptions = {}
+): Promise<AnalysisResult> {
   const fetchImpl =
     typeof fetchImplOrPlatformLabel === "function" ? fetchImplOrPlatformLabel : fetch;
   const requestPlatformLabel =
     typeof fetchImplOrPlatformLabel === "string" ? fetchImplOrPlatformLabel : maybePlatformLabel;
   const model = settings.model.replace(/^models\//, "");
+  const attempt = options.attempt ?? 1;
+  const maxAttempts = options.maxAttempts ?? 1;
   await appendDebugLog({
     source: "gemini",
     event: "gemini_request_start",
-    payload: { model, chars: postText.length }
+    payload: { model, chars: postText.length, attempt, maxAttempts }
   });
   const response = await fetchImpl(`${GEMINI_ENDPOINT}/${encodeURIComponent(model)}:generateContent`, {
     method: "POST",
@@ -244,13 +270,20 @@ export async function callGemini(
     .filter((part): part is string => Boolean(part))
     .join("")
     .trim();
+  const responseDiagnostics = getGeminiResponseDiagnostics(payload, text);
 
   if (!text) {
     await appendDebugLog({
       source: "gemini",
       severity: "warn",
       event: "gemini_invalid_response",
-      payload: { model, reason: "missing_text" }
+      payload: {
+        model,
+        reason: "missing_text",
+        attempt,
+        maxAttempts,
+        ...responseDiagnostics
+      }
     });
     throw new Error("Gemini response did not contain text.");
   }
@@ -262,6 +295,8 @@ export async function callGemini(
       event: "gemini_success",
       payload: {
         model,
+        attempt,
+        maxAttempts,
         marker: result.marker,
         confidence: result.confidence,
         signalCount: result.signals.length
@@ -275,7 +310,10 @@ export async function callGemini(
       event: "gemini_invalid_response",
       payload: {
         model,
-        reason: error instanceof Error ? error.name || "validation_error" : "validation_error"
+        reason: error instanceof Error ? error.name || "validation_error" : "validation_error",
+        attempt,
+        maxAttempts,
+        ...getInvalidResponseDiagnostics(error, responseDiagnostics)
       }
     });
     const invalid = new Error(
@@ -284,6 +322,43 @@ export async function callGemini(
     invalid.name = "InvalidGeminiResponseError";
     throw invalid;
   }
+}
+
+async function callGeminiForPostWithRetry(
+  postText: string,
+  settings: Awaited<ReturnType<typeof getSettings>>,
+  apiKey: string,
+  requestPlatformLabel: string,
+  hash: string
+): Promise<AnalysisResult> {
+  for (let attempt = 1; attempt <= POST_ANALYSIS_MAX_ATTEMPTS; attempt += 1) {
+    try {
+      return await callGemini(postText, settings, apiKey, requestPlatformLabel, undefined, {
+        attempt,
+        maxAttempts: POST_ANALYSIS_MAX_ATTEMPTS
+      });
+    } catch (error) {
+      if (attempt < POST_ANALYSIS_MAX_ATTEMPTS && isInvalidGeminiResponseError(error)) {
+        await appendDebugLog({
+          source: "background",
+          severity: "warn",
+          event: "analyze_retry",
+          payload: {
+            hash,
+            code: "invalid_response",
+            attempt,
+            nextAttempt: attempt + 1,
+            maxAttempts: POST_ANALYSIS_MAX_ATTEMPTS
+          }
+        });
+        continue;
+      }
+
+      throw error;
+    }
+  }
+
+  throw new Error("Gemini retry loop ended unexpectedly.");
 }
 
 async function geminiHttpError(response: Response): Promise<Error & { status?: number }> {
@@ -311,16 +386,8 @@ function normalizeGeminiError(error: unknown) {
 
   if (
     error instanceof SyntaxError ||
-    (error instanceof Error && error.name === "InvalidGeminiResponseError")
+    isInvalidGeminiResponseError(error)
   ) {
-    return {
-      code: "invalid_response" as const,
-      message: ERROR_MESSAGES.invalidResponse,
-      retryable: true
-    };
-  }
-
-  if (error instanceof Error && error.message.includes("did not contain text")) {
     return {
       code: "invalid_response" as const,
       message: ERROR_MESSAGES.invalidResponse,
@@ -333,4 +400,45 @@ function normalizeGeminiError(error: unknown) {
     message: ERROR_MESSAGES.providerError,
     retryable: status ? status >= 500 : true
   };
+}
+
+function isInvalidGeminiResponseError(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    (error.name === "InvalidGeminiResponseError" ||
+      error.message.includes("did not contain text"))
+  );
+}
+
+function getGeminiResponseDiagnostics(
+  payload: GeminiGenerateContentResponse,
+  text: string | undefined
+): Record<string, string | number | boolean> {
+  const firstCandidate = payload.candidates?.[0];
+  const candidateSafetyRatingCount = countArray(firstCandidate?.safetyRatings);
+  const promptSafetyRatingCount = countArray(payload.promptFeedback?.safetyRatings);
+
+  return {
+    candidateCount: countArray(payload.candidates),
+    partCount: countArray(firstCandidate?.content?.parts),
+    finishReason: firstCandidate?.finishReason ?? "unknown",
+    safetyRatingCount: candidateSafetyRatingCount + promptSafetyRatingCount,
+    promptBlockReason: payload.promptFeedback?.blockReason ?? "none",
+    ...getAnalysisJsonDiagnostics(text)
+  };
+}
+
+function getInvalidResponseDiagnostics(
+  error: unknown,
+  diagnostics: Record<string, string | number | boolean>
+): Record<string, string | number | boolean> {
+  if (!(error instanceof SyntaxError)) {
+    return { ...diagnostics, parseCategory: "validation_error" };
+  }
+
+  return diagnostics;
+}
+
+function countArray(value: unknown[] | undefined): number {
+  return Array.isArray(value) ? value.length : 0;
 }

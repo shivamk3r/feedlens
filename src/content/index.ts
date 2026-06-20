@@ -30,6 +30,7 @@ const visiblePosts = new Map<string, VisiblePostState>();
 const POST_LOOKAHEAD_VIEWPORT_RATIO = 1;
 const MIN_POST_LOOKAHEAD_PIXELS = 600;
 const MAX_POST_LOOKAHEAD_PIXELS = 1600;
+const RETRYABLE_ERROR_BACKOFF_MS = 30_000;
 const EXTENSION_CONTEXT_INVALIDATED_MESSAGE = "Extension context invalidated.";
 const platform = getCurrentPlatformAdapter();
 let settings: FeedLensSettings | undefined;
@@ -39,6 +40,7 @@ let scanTimer: number | undefined;
 let lastError: string | undefined;
 let observer: MutationObserver | undefined;
 let extensionContextValid = true;
+const retryBackoffUntil = new Map<string, number>();
 
 bootstrap();
 
@@ -252,6 +254,14 @@ async function scanVisible({ force, manual }: { force: boolean; manual: boolean 
       logDebug("scan_skipped_post", { reason: "already_analyzed", hash: post.hash });
       continue;
     }
+    if (!manual && !force && isRetryBackoffActive(post.hash)) {
+      logDebug("scan_skipped_post", {
+        reason: "retry_backoff",
+        hash: post.hash,
+        remainingMs: Math.max(0, (retryBackoffUntil.get(post.hash) ?? 0) - Date.now())
+      });
+      continue;
+    }
 
     visiblePosts.set(post.hash, { element, post, status: "detected" });
     await analyzeVisiblePost(element, post, force);
@@ -312,6 +322,7 @@ async function analyzeVisiblePost(
       settings
     });
     visiblePosts.set(post.hash, { element, post, status: "analyzed" });
+    retryBackoffUntil.delete(post.hash);
     lastError = undefined;
     logDebug("marker_rendered", {
       hash: post.hash,
@@ -328,6 +339,11 @@ async function analyzeVisiblePost(
     status: "error",
     lastError: response.error.message
   });
+  if (response.error.retryable && response.error.code === "invalid_response") {
+    retryBackoffUntil.set(post.hash, Date.now() + RETRYABLE_ERROR_BACKOFF_MS);
+  } else {
+    retryBackoffUntil.delete(post.hash);
+  }
   lastError = response.error.message;
   logDebug("analysis_error", {
     hash: post.hash,
@@ -342,6 +358,7 @@ function clearVisibleResults(): void {
     clearMarker(state.element);
   }
   visiblePosts.clear();
+  retryBackoffUntil.clear();
   lastError = undefined;
   logDebug("markers_cleared", { count: clearedCount });
 }
@@ -381,6 +398,20 @@ function getPostLookaheadPixels(): number {
     MAX_POST_LOOKAHEAD_PIXELS,
     Math.max(MIN_POST_LOOKAHEAD_PIXELS, Math.round(viewportHeight * POST_LOOKAHEAD_VIEWPORT_RATIO))
   );
+}
+
+function isRetryBackoffActive(hash: string): boolean {
+  const backoffUntil = retryBackoffUntil.get(hash);
+  if (!backoffUntil) {
+    return false;
+  }
+
+  if (backoffUntil <= Date.now()) {
+    retryBackoffUntil.delete(hash);
+    return false;
+  }
+
+  return true;
 }
 
 function sendBackgroundMessage<T = unknown>(message: BackgroundMessage): Promise<T> {

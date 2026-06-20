@@ -77,6 +77,22 @@ describe("debug log storage", () => {
     });
   });
 
+  it("allows safe response-shape diagnostics with risky substrings", () => {
+    expect(
+      sanitizeDebugPayload({
+        textLength: 240,
+        hasText: true,
+        promptBlockReason: "none",
+        postText: "raw post text",
+        prompt: "raw prompt"
+      })
+    ).toEqual({
+      textLength: 240,
+      hasText: true,
+      promptBlockReason: "none"
+    });
+  });
+
   it("no-ops outside development and test builds", async () => {
     vi.stubEnv("NODE_ENV", "production");
 

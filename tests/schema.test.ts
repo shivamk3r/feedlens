@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { parseAnalysisJson, validateAnalysisResult } from "../src/shared/schema";
+import {
+  getAnalysisJsonDiagnostics,
+  parseAnalysisJson,
+  validateAnalysisResult
+} from "../src/shared/schema";
 
 const validResult = {
   marker: "yellow",
@@ -104,5 +108,30 @@ describe("analysis schema validation", () => {
         manipulation_pressure_score: 0
       })
     ).toThrow(/Component scores/);
+  });
+
+  it("classifies sanitized JSON response-shape diagnostics", () => {
+    expect(getAnalysisJsonDiagnostics("   ")).toMatchObject({
+      hasText: false,
+      textLength: 0,
+      parseCategory: "missing_text"
+    });
+
+    expect(getAnalysisJsonDiagnostics("I cannot produce that response.")).toMatchObject({
+      hasBalancedObject: false,
+      parseCategory: "no_json_object"
+    });
+
+    expect(getAnalysisJsonDiagnostics(`\`\`\`json\n${JSON.stringify(validResult)}\n\`\`\``)).toMatchObject({
+      hasJsonFence: true,
+      hasBalancedObject: true,
+      parseCategory: "json_fence"
+    });
+
+    expect(getAnalysisJsonDiagnostics('{"marker":"red"')).toMatchObject({
+      startsWithJsonObject: true,
+      endsWithJsonObject: false,
+      parseCategory: "likely_truncated"
+    });
   });
 });
