@@ -358,7 +358,7 @@ textarea {
   --feedlens-marker-color: var(--fl-blue);
   --feedlens-marker-bg: var(--fl-blue-bg);
   position: absolute;
-  z-index: 30;
+  z-index: 32;
   top: 8px;
   right: 8px;
   color: var(--feedlens-marker-color);
@@ -440,13 +440,19 @@ textarea {
 }
 
 .feedlens-detail {
+  --feedlens-marker-color: var(--fl-blue);
+  --feedlens-marker-bg: var(--fl-blue-bg);
+  --feedlens-detail-top: 48px;
+  --feedlens-detail-right: 8px;
+  --feedlens-detail-width: 380px;
+  --feedlens-detail-max-height: min(520px, 70vh);
   display: grid;
   position: absolute;
-  top: 40px;
-  right: 0;
+  top: var(--feedlens-detail-top);
+  right: var(--feedlens-detail-right);
   z-index: 31;
-  width: min(380px, calc(100vw - 32px));
-  max-height: min(520px, 70vh);
+  width: min(var(--feedlens-detail-width), calc(100% - 16px), calc(100vw - 32px));
+  max-height: var(--feedlens-detail-max-height);
   overflow: auto;
   box-sizing: border-box;
   gap: 10px;
@@ -459,6 +465,21 @@ textarea {
   font-size: 13px;
   line-height: 1.45;
   pointer-events: auto;
+}
+
+.feedlens-detail--green {
+  --feedlens-marker-color: var(--fl-green);
+  --feedlens-marker-bg: var(--fl-green-bg);
+}
+
+.feedlens-detail--yellow {
+  --feedlens-marker-color: var(--fl-yellow);
+  --feedlens-marker-bg: var(--fl-yellow-bg);
+}
+
+.feedlens-detail--red {
+  --feedlens-marker-color: var(--fl-red);
+  --feedlens-marker-bg: var(--fl-red-bg);
 }
 
 .feedlens-detail[hidden] {

@@ -9,6 +9,12 @@ interface RenderMarkerOptions {
 }
 
 let detailIdCounter = 0;
+const DETAIL_EDGE_INSET_PX = 8;
+const DETAIL_GAP_PX = 8;
+const DETAIL_MAX_HEIGHT_PX = 520;
+const DETAIL_MAX_WIDTH_PX = 380;
+const DETAIL_MIN_BELOW_HEIGHT_PX = 120;
+const DETAIL_VIEWPORT_INLINE_INSET_PX = 32;
 
 export function renderMarker({ host, result, source, settings }: RenderMarkerOptions): void {
   clearMarker(host);
@@ -50,11 +56,14 @@ export function renderMarker({ host, result, source, settings }: RenderMarkerOpt
       "aria-label",
       nextExpanded ? "Hide FeedLens details" : "Show FeedLens details"
     );
-    detail.hidden = expanded;
+    if (nextExpanded) {
+      positionDetailWithinPost(host, marker, button, detail);
+    }
+    detail.hidden = !nextExpanded;
   });
 
-  marker.append(button, detail);
-  host.prepend(marker);
+  marker.append(button);
+  host.prepend(marker, detail);
   hydrateIcons(marker);
 }
 
@@ -77,7 +86,9 @@ export function renderError(host: HTMLElement, message: string): void {
 }
 
 export function clearMarker(host: HTMLElement): void {
-  host.querySelectorAll(":scope > .feedlens-marker").forEach((marker) => marker.remove());
+  host
+    .querySelectorAll(":scope > .feedlens-marker, :scope > .feedlens-detail")
+    .forEach((element) => element.remove());
   host.classList.remove(
     "feedlens-post",
     "feedlens-post--green",
@@ -95,7 +106,7 @@ export function clearMarker(host: HTMLElement): void {
 
 function createDetail(result: AnalysisResult, source: "cache" | "gemini"): HTMLElement {
   const detail = document.createElement("section");
-  detail.className = "feedlens-detail";
+  detail.className = `feedlens-detail feedlens-detail--${result.marker}`;
   detail.setAttribute("role", "dialog");
   detail.setAttribute("aria-label", "FeedLens analysis details");
 
@@ -158,6 +169,114 @@ function createDetail(result: AnalysisResult, source: "cache" | "gemini"): HTMLE
   }
   detail.append(counter, action);
   return detail;
+}
+
+function positionDetailWithinPost(
+  host: HTMLElement,
+  marker: HTMLElement,
+  button: HTMLElement,
+  detail: HTMLElement
+): void {
+  const hostRect = host.getBoundingClientRect();
+  const markerRect = marker.getBoundingClientRect();
+  const buttonRect = button.getBoundingClientRect();
+  const hostWidth = rectWidth(hostRect);
+  const hostHeight = rectHeight(hostRect);
+  const markerHeight = rectHeight(markerRect);
+  const buttonHeight = rectHeight(buttonRect);
+
+  if (!hostWidth || !hostHeight || !markerHeight || !buttonHeight) {
+    detail.dataset.feedlensPlacement = "below";
+    return;
+  }
+
+  const viewportWidth = window.innerWidth || document.documentElement.clientWidth || hostWidth;
+  const viewportHeight = window.innerHeight || document.documentElement.clientHeight || hostHeight;
+  const viewportWidthLimit = Math.max(1, viewportWidth - DETAIL_VIEWPORT_INLINE_INSET_PX);
+  const viewportHeightLimit = Math.max(1, Math.round(viewportHeight * 0.7));
+  const maxVisualHeight = Math.min(DETAIL_MAX_HEIGHT_PX, viewportHeightLimit);
+  const defaultWidth = boundedWidth(hostWidth - DETAIL_EDGE_INSET_PX * 2, viewportWidthLimit);
+  const preferredRight = hostRect.right - buttonRect.right;
+
+  const belowTop =
+    Math.max(markerRect.bottom - hostRect.top, buttonRect.bottom - hostRect.top) + DETAIL_GAP_PX;
+  const belowMaxHeight = Math.min(
+    maxVisualHeight,
+    hostHeight - belowTop - DETAIL_EDGE_INSET_PX
+  );
+
+  if (belowMaxHeight >= DETAIL_MIN_BELOW_HEIGHT_PX) {
+    const right = clamp(
+      preferredRight,
+      DETAIL_EDGE_INSET_PX,
+      Math.max(DETAIL_EDGE_INSET_PX, hostWidth - defaultWidth - DETAIL_EDGE_INSET_PX)
+    );
+    applyDetailPlacement(detail, "below", belowTop, right, defaultWidth, belowMaxHeight);
+    return;
+  }
+
+  const markerTop = markerRect.top - hostRect.top;
+  const compactTop = clamp(
+    markerTop,
+    DETAIL_EDGE_INSET_PX,
+    Math.max(DETAIL_EDGE_INSET_PX, hostHeight - DETAIL_EDGE_INSET_PX)
+  );
+  const compactMaxHeight = Math.min(
+    maxVisualHeight,
+    Math.max(1, hostHeight - compactTop - DETAIL_EDGE_INSET_PX)
+  );
+  const buttonLeft = buttonRect.left - hostRect.left;
+  const adjacentWidth = Math.max(1, buttonLeft - DETAIL_EDGE_INSET_PX - DETAIL_GAP_PX);
+  const compactWidth = boundedWidth(adjacentWidth, viewportWidthLimit);
+  const compactRightEdge = Math.max(DETAIL_EDGE_INSET_PX, buttonLeft - DETAIL_GAP_PX);
+  const compactRight = Math.max(DETAIL_EDGE_INSET_PX, hostWidth - compactRightEdge);
+
+  applyDetailPlacement(
+    detail,
+    "compact",
+    compactTop,
+    compactRight,
+    compactWidth,
+    compactMaxHeight
+  );
+}
+
+function applyDetailPlacement(
+  detail: HTMLElement,
+  placement: "below" | "compact",
+  top: number,
+  right: number,
+  width: number,
+  maxHeight: number
+): void {
+  detail.dataset.feedlensPlacement = placement;
+  detail.style.setProperty("--feedlens-detail-top", toPixels(top));
+  detail.style.setProperty("--feedlens-detail-right", toPixels(right));
+  detail.style.setProperty("--feedlens-detail-width", toPixels(width));
+  detail.style.setProperty("--feedlens-detail-max-height", toPixels(maxHeight));
+}
+
+function boundedWidth(availableWidth: number, viewportWidthLimit: number): number {
+  return Math.max(1, Math.min(DETAIL_MAX_WIDTH_PX, viewportWidthLimit, availableWidth));
+}
+
+function rectWidth(rect: DOMRect): number {
+  return rect.width || Math.max(0, rect.right - rect.left);
+}
+
+function rectHeight(rect: DOMRect): number {
+  return rect.height || Math.max(0, rect.bottom - rect.top);
+}
+
+function clamp(value: number, min: number, max: number): number {
+  if (max < min) {
+    return min;
+  }
+  return Math.min(max, Math.max(min, value));
+}
+
+function toPixels(value: number): string {
+  return `${Math.max(0, Math.round(value))}px`;
 }
 
 function scorePill(label: string, score: number): HTMLElement {

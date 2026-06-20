@@ -37,6 +37,28 @@ function settings(patch: Partial<FeedLensSettings> = {}): FeedLensSettings {
   };
 }
 
+interface MockRect {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
+function mockRect(element: HTMLElement, rect: MockRect): void {
+  element.getBoundingClientRect = () =>
+    ({
+      x: rect.left,
+      y: rect.top,
+      left: rect.left,
+      top: rect.top,
+      right: rect.left + rect.width,
+      bottom: rect.top + rect.height,
+      width: rect.width,
+      height: rect.height,
+      toJSON: () => ({})
+    }) as DOMRect;
+}
+
 describe("content marker rendering", () => {
   it("renders a post bezel with an accessible icon-only Lens details button", () => {
     const host = document.createElement("article");
@@ -50,10 +72,11 @@ describe("content marker rendering", () => {
 
     const marker = host.querySelector<HTMLElement>(":scope > .feedlens-marker");
     const button = marker?.querySelector<HTMLButtonElement>(".feedlens-marker__button");
-    const detail = marker?.querySelector<HTMLElement>(".feedlens-detail");
+    const detail = host.querySelector<HTMLElement>(":scope > .feedlens-detail");
 
     expect(marker).toBeTruthy();
     expect(button).toBeTruthy();
+    expect(marker?.querySelector(".feedlens-detail")).toBeNull();
     expect(button?.textContent?.trim()).toBe("");
     expect(button?.getAttribute("aria-label")).toBe("Show FeedLens details");
     expect(button?.getAttribute("aria-expanded")).toBe("false");
@@ -64,6 +87,23 @@ describe("content marker rendering", () => {
     expect(detail?.textContent).toContain("Overall risk 79");
     expect(detail?.textContent).toContain("act now");
     expect(detail?.textContent).toContain("Suggested action");
+  });
+
+  it("replaces direct Lens details when rendering a new marker", () => {
+    const host = document.createElement("article");
+
+    renderMarker({ host, result, source: "gemini", settings: settings() });
+    renderMarker({
+      host,
+      result: { ...result, marker: "green" },
+      source: "cache",
+      settings: settings()
+    });
+
+    expect(host.querySelectorAll(":scope > .feedlens-marker")).toHaveLength(1);
+    expect(host.querySelectorAll(":scope > .feedlens-detail")).toHaveLength(1);
+    expect(host.querySelector(".feedlens-detail--green")).toBeTruthy();
+    expect(host.dataset.feedlensMarker).toBe("green");
   });
 
   it("toggles the inline Lens details without selecting a side panel result", () => {
@@ -89,6 +129,57 @@ describe("content marker rendering", () => {
     expect(sendMessage).not.toHaveBeenCalledWith(
       expect.objectContaining({ type: "feedlens:selectResult" })
     );
+  });
+
+  it("positions details below the Lens button when the post has enough height", () => {
+    const host = document.createElement("article");
+
+    renderMarker({ host, result, source: "gemini", settings: settings() });
+
+    const marker = host.querySelector<HTMLElement>(":scope > .feedlens-marker");
+    const button = host.querySelector<HTMLButtonElement>(".feedlens-marker__button");
+    const detail = host.querySelector<HTMLElement>(":scope > .feedlens-detail");
+    expect(marker).toBeTruthy();
+    expect(button).toBeTruthy();
+    expect(detail).toBeTruthy();
+
+    mockRect(host, { left: 100, top: 200, width: 500, height: 720 });
+    mockRect(marker!, { left: 560, top: 208, width: 32, height: 32 });
+    mockRect(button!, { left: 560, top: 208, width: 32, height: 32 });
+
+    button?.click();
+
+    expect(detail?.dataset.feedlensPlacement).toBe("below");
+    expect(detail?.style.getPropertyValue("--feedlens-detail-top")).toBe("48px");
+    expect(detail?.style.getPropertyValue("--feedlens-detail-right")).toBe("8px");
+    expect(detail?.style.getPropertyValue("--feedlens-detail-width")).toBe("380px");
+    expect(detail?.style.getPropertyValue("--feedlens-detail-max-height")).toBe("520px");
+  });
+
+  it("keeps details inside a short post with compact bounded placement", () => {
+    const host = document.createElement("article");
+
+    renderMarker({ host, result, source: "gemini", settings: settings() });
+
+    const marker = host.querySelector<HTMLElement>(":scope > .feedlens-marker");
+    const button = host.querySelector<HTMLButtonElement>(".feedlens-marker__button");
+    const detail = host.querySelector<HTMLElement>(":scope > .feedlens-detail");
+    expect(marker).toBeTruthy();
+    expect(button).toBeTruthy();
+    expect(detail).toBeTruthy();
+
+    mockRect(host, { left: 100, top: 200, width: 360, height: 72 });
+    mockRect(marker!, { left: 420, top: 208, width: 32, height: 32 });
+    mockRect(button!, { left: 420, top: 208, width: 32, height: 32 });
+
+    button?.click();
+
+    expect(detail?.hidden).toBe(false);
+    expect(detail?.dataset.feedlensPlacement).toBe("compact");
+    expect(detail?.style.getPropertyValue("--feedlens-detail-top")).toBe("8px");
+    expect(detail?.style.getPropertyValue("--feedlens-detail-right")).toBe("48px");
+    expect(detail?.style.getPropertyValue("--feedlens-detail-width")).toBe("304px");
+    expect(detail?.style.getPropertyValue("--feedlens-detail-max-height")).toBe("56px");
   });
 
   it("preserves marker-only mode on the host for legacy UI handling", () => {
