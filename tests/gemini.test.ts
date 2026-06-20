@@ -55,8 +55,11 @@ describe("Gemini analysis service", () => {
     expect((init as RequestInit).headers).toMatchObject({ "x-goog-api-key": "secret-key" });
 
     const body = JSON.parse(String((init as RequestInit).body));
+    expect(body.generationConfig.maxOutputTokens).toBe(DEFAULT_SETTINGS.maxOutputTokens);
+    expect(body.generationConfig.thinkingConfig).toEqual({ thinkingLevel: "low" });
     expect(body.generationConfig.responseMimeType).toBe("application/json");
     expect(body.generationConfig.responseSchema).toBeTruthy();
+    expect(body.generationConfig.responseSchema.properties.signals.maxItems).toBe(4);
     expect(JSON.stringify(body.generationConfig.responseSchema)).not.toContain(
       "additionalProperties"
     );
@@ -105,7 +108,13 @@ describe("Gemini analysis service", () => {
             content: { parts: [{ text: JSON.stringify({ marker: "red" }) }] }
           }
         ],
-        promptFeedback: { blockReason: "none", safetyRatings: [{}] }
+        promptFeedback: { blockReason: "none", safetyRatings: [{}] },
+        usageMetadata: {
+          promptTokenCount: 120,
+          candidatesTokenCount: 8,
+          thoughtsTokenCount: 17,
+          totalTokenCount: 145
+        }
       })
     );
     vi.stubGlobal("fetch", fetchImpl);
@@ -128,6 +137,12 @@ describe("Gemini analysis service", () => {
       finishReason: "STOP",
       safetyRatingCount: 2,
       promptBlockReason: "none",
+      maxOutputTokens: DEFAULT_SETTINGS.maxOutputTokens,
+      thinkingLevel: "low",
+      inputTokenCount: 120,
+      outputTokenCount: 8,
+      thinkingTokenCount: 17,
+      totalTokenCount: 145,
       textLength: JSON.stringify({ marker: "red" }).length,
       hasText: true,
       hasBalancedObject: true,
@@ -178,12 +193,22 @@ describe("Gemini analysis service", () => {
       code: "invalid_response",
       attempt: 1,
       nextAttempt: 2,
-      maxAttempts: 2
+      maxAttempts: 2,
+      nextMaxOutputTokens: 4096,
+      maxOutputTokensIncreased: true
     });
     expect(logs.find((log) => log.event === "gemini_success")?.payload).toMatchObject({
       attempt: 2,
-      maxAttempts: 2
+      maxAttempts: 2,
+      maxOutputTokens: 4096,
+      thinkingLevel: "low"
     });
+
+    const firstBody = JSON.parse(String((fetchImpl.mock.calls[0]?.[1] as RequestInit).body));
+    const retryBody = JSON.parse(String((fetchImpl.mock.calls[1]?.[1] as RequestInit).body));
+    expect(firstBody.generationConfig.maxOutputTokens).toBe(DEFAULT_SETTINGS.maxOutputTokens);
+    expect(retryBody.generationConfig.maxOutputTokens).toBe(4096);
+    expect(retryBody.generationConfig.thinkingConfig).toEqual({ thinkingLevel: "low" });
   });
 
   it("validates a Gemini key with a synthetic structured analysis request", async () => {

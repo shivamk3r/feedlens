@@ -11,7 +11,7 @@ export const DEFAULT_SETTINGS: FeedLensSettings = {
   storageMode: "local",
   model: DEFAULT_MODEL,
   temperature: 0.2,
-  maxOutputTokens: 1400,
+  maxOutputTokens: 2048,
   analysisDepth: "balanced",
   storeCache: true,
   highlightIntensity: "standard",

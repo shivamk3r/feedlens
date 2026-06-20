@@ -66,6 +66,8 @@ POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:ge
 
 The API key is sent with the `x-goog-api-key` header, not in the URL. The request uses Gemini structured JSON output with the FeedLens schema and the fixed `gemini-3.5-flash` model.
 
+Post analysis requests set Gemini thinking to `low`, use a bounded JSON schema, and retry likely truncated `MAX_TOKENS` responses once with a larger output-token cap. Debug logs record sanitized token counts and finish reasons when Gemini returns them, but never record prompt text, response bodies, evidence, summaries, URLs, authors, or API keys.
+
 ## Scoring Contract
 
 Each analysis result includes:

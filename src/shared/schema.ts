@@ -105,7 +105,8 @@ export const analysisResponseSchema = {
     },
     signals: {
       type: "array",
-      description: "Detected signal evidence from the post text.",
+      maxItems: 4,
+      description: "Detected signal evidence from the post text. Return no more than 4 signals.",
       items: {
         type: "object",
         additionalProperties: false,

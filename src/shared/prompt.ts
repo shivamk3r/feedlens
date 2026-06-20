@@ -2,6 +2,7 @@ import { analysisResponseSchema } from "./schema";
 import type { FeedLensSettings } from "./types";
 
 const geminiResponseSchema = stripUnsupportedGeminiSchema(analysisResponseSchema);
+export const GEMINI_THINKING_LEVEL = "low";
 
 export const SYSTEM_PROMPT = `You are FeedLens, a careful assistant that analyzes visible social post text for information quality, misinformation risk, and manipulation or persuasion signals.
 
@@ -46,6 +47,7 @@ Recency guidance:
 - Do not say a recent event has no credible coverage, no public records, or is likely false only because it is surprising or absent from your knowledge.
 - If the text does not provide sources for a recent factual claim, prefer an uncertainty or missing-evidence explanation and suggest checking current sources.
 - Use a high misinformation-risk score only when the post text itself contains clear red flags such as contradictions, impossible details, fabricated certainty, or misleading framing.
+- Keep the JSON compact: include at most 4 signals, and keep summary, counter_reading, and suggested_user_action to one concise sentence each.
 
 Post text:
 ${postText}`;
@@ -70,6 +72,9 @@ export function buildGeminiRequestBody(
     generationConfig: {
       temperature: settings.temperature,
       maxOutputTokens: settings.maxOutputTokens,
+      thinkingConfig: {
+        thinkingLevel: GEMINI_THINKING_LEVEL
+      },
       responseMimeType: "application/json",
       responseSchema: geminiResponseSchema
     }
