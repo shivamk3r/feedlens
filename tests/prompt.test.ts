@@ -12,5 +12,7 @@ describe("FeedLens prompt guardrails", () => {
     expect(SYSTEM_PROMPT).toContain("lack of model knowledge");
     expect(userPrompt).toContain("events newer than your model knowledge");
     expect(userPrompt).toContain("suggest checking current sources");
+    expect(userPrompt).toContain("add up to exactly 100");
+    expect(userPrompt).toContain("Do not include it in the signal-mix sum");
   });
 });

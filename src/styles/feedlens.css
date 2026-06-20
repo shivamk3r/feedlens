@@ -504,18 +504,41 @@ textarea {
 }
 
 .feedlens-detail__scores {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
   gap: 6px;
 }
 
+.feedlens-detail__scores-label {
+  color: var(--fl-muted);
+  font-size: 12px;
+  font-weight: 760;
+}
+
+.feedlens-detail__score-mix {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
 .feedlens-detail__score {
+  display: inline-flex;
+  align-items: center;
   border-radius: 999px;
   background: #eef3f0;
   color: #2f3d35;
   padding: 3px 8px;
   font-size: 12px;
   font-weight: 720;
+  white-space: nowrap;
+}
+
+.feedlens-detail__overall-risk {
+  border-top: 1px solid var(--fl-border);
+  color: #2f3d35;
+  padding-top: 6px;
+  font-size: 12px;
+  font-weight: 760;
 }
 
 .feedlens-detail__summary,

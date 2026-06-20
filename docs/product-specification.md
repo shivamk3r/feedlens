@@ -354,13 +354,14 @@ Red: High misinformation risk, strong manipulation pressure, or content that pre
 
 ### Scores
 
-Each post should receive separate scores so the UI can explain why a marker was chosen:
+Each post should receive a normalized component mix plus a separate overall risk score so the UI can explain why a marker was chosen without implying that overall risk is another additive component:
 
 ```text
-information_quality_score: 0-100, where higher means more useful, specific, supported, and nuanced.
-misinformation_risk_score: 0-100, where higher means more unsupported, misleading, unverifiable, or overconfident.
-manipulation_pressure_score: 0-100, where higher means more psychological pressure or emotional steering.
-overall_risk_score: 0-100, derived from misinformation risk and manipulation pressure.
+information_quality_score: 0-100 signal-mix share for useful, specific, supported, and nuanced information.
+misinformation_risk_score: 0-100 signal-mix share for unsupported, misleading, unverifiable, or overconfident claims.
+manipulation_pressure_score: 0-100 signal-mix share for psychological pressure or emotional steering.
+The three signal-mix scores must be integers that add up to exactly 100.
+overall_risk_score: separate 0-100 overall risk rating derived from misinformation risk and manipulation pressure.
 ```
 
 ### Marker Decision Rules
@@ -441,9 +442,9 @@ The LLM should return structured JSON.
 {
   "marker": "red",
   "confidence": "medium",
-  "information_quality_score": 28,
-  "misinformation_risk_score": 76,
-  "manipulation_pressure_score": 82,
+  "information_quality_score": 15,
+  "misinformation_risk_score": 41,
+  "manipulation_pressure_score": 44,
   "overall_risk_score": 79,
   "summary": "This post makes broad unsupported claims and uses status anxiety to pressure the reader.",
   "signals": [
@@ -476,16 +477,18 @@ The LLM should return structured JSON.
 1. `marker` must be `green`, `yellow`, or `red`.
 2. `confidence` must be `low`, `medium`, or `high`.
 3. Score fields must be integers from 0 to 100.
-4. `signals` must contain zero or more detected signal objects.
-5. Every signal should include:
+4. The three component scores must add up to exactly 100.
+5. `overall_risk_score` is separate and must not be included in the component-score sum.
+6. `signals` must contain zero or more detected signal objects.
+7. Every signal should include:
    - `type`
    - `severity`
    - `evidence`
    - `explanation`
-6. Evidence should quote only the minimum relevant phrase from the post.
-7. The response should include a fair counter-reading when appropriate.
-8. The response should avoid claims about author intent.
-9. Misinformation should be framed as risk unless the system has enough evidence to support a stronger conclusion.
+8. Evidence should quote only the minimum relevant phrase from the post.
+9. The response should include a fair counter-reading when appropriate.
+10. The response should avoid claims about author intent.
+11. Misinformation should be framed as risk unless the system has enough evidence to support a stronger conclusion.
 
 ## 13. Prompt Design
 
@@ -517,10 +520,11 @@ If a claim may be misleading or unsupported, describe it as a risk unless there 
 Return JSON with:
 - marker: green, yellow, or red
 - confidence: low, medium, high
-- information_quality_score from 0 to 100
-- misinformation_risk_score from 0 to 100
-- manipulation_pressure_score from 0 to 100
-- overall_risk_score from 0 to 100
+- information_quality_score from 0 to 100 as part of a normalized signal mix
+- misinformation_risk_score from 0 to 100 as part of the same normalized signal mix
+- manipulation_pressure_score from 0 to 100 as part of the same normalized signal mix
+- the three signal-mix scores must add up to exactly 100
+- overall_risk_score from 0 to 100 as a separate risk rating
 - summary
 - detected signals
 - evidence quotes
@@ -570,15 +574,13 @@ Suggested visual treatment:
 The inline Lens details popover should show:
 
 1. Green, yellow, or red marker label.
-2. Information-quality score.
-3. Misinformation-risk score.
-4. Manipulation-pressure score.
-5. Overall risk score.
-6. Signal categories.
-7. Evidence and explanations.
-8. Confidence.
-9. Counter-reading.
-10. Suggested user action.
+2. Normalized signal mix across information quality, misinformation risk, and manipulation pressure.
+3. Overall risk score on a separate line.
+4. Signal categories.
+5. Evidence and explanations.
+6. Confidence.
+7. Counter-reading.
+8. Suggested user action.
 
 ### Color and Severity Labels
 
@@ -628,9 +630,9 @@ Cache value:
 ```json
 {
   "marker": "red",
-  "information_quality_score": 28,
-  "misinformation_risk_score": 76,
-  "manipulation_pressure_score": 82,
+  "information_quality_score": 15,
+  "misinformation_risk_score": 41,
+  "manipulation_pressure_score": 44,
   "overall_risk_score": 79,
   "signals": [],
   "created_at": "timestamp",

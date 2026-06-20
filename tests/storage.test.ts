@@ -20,8 +20,8 @@ const result: AnalysisResult = {
   marker: "green",
   confidence: "high",
   information_quality_score: 90,
-  misinformation_risk_score: 8,
-  manipulation_pressure_score: 10,
+  misinformation_risk_score: 5,
+  manipulation_pressure_score: 5,
   overall_risk_score: 9,
   summary: "Specific and low pressure.",
   signals: [],
@@ -217,7 +217,7 @@ describe("extension storage helpers", () => {
       result,
       createdAt: new Date().toISOString(),
       model: DEFAULT_SETTINGS.model,
-      promptVersion: "feedlens-v1"
+      promptVersion: "feedlens-v2"
     });
 
     expect(await getCacheEntryCount()).toBe(1);

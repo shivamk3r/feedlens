@@ -4,9 +4,9 @@ import { parseAnalysisJson, validateAnalysisResult } from "../src/shared/schema"
 const validResult = {
   marker: "yellow",
   confidence: "medium",
-  information_quality_score: 61,
-  misinformation_risk_score: 42,
-  manipulation_pressure_score: 38,
+  information_quality_score: 45,
+  misinformation_risk_score: 35,
+  manipulation_pressure_score: 20,
   overall_risk_score: 40,
   summary: "The post has useful ideas but limited evidence.",
   signals: [
@@ -40,7 +40,7 @@ describe("analysis schema validation", () => {
       ...validResult,
       marker: "Yellow",
       confidence: "Medium",
-      information_quality_score: "61",
+      information_quality_score: "45",
       signals: [
         {
           type: "Missing Evidence",
@@ -77,5 +77,32 @@ describe("analysis schema validation", () => {
     expect(() =>
       validateAnalysisResult({ ...validResult, misinformation_risk_score: 101 })
     ).toThrow(/misinformation_risk_score/);
+  });
+
+  it("normalizes component scores to an exact 100-point signal mix", () => {
+    expect(
+      validateAnalysisResult({
+        ...validResult,
+        information_quality_score: 28,
+        misinformation_risk_score: 76,
+        manipulation_pressure_score: 82
+      })
+    ).toMatchObject({
+      information_quality_score: 15,
+      misinformation_risk_score: 41,
+      manipulation_pressure_score: 44,
+      overall_risk_score: 40
+    });
+  });
+
+  it("rejects all-zero component scores", () => {
+    expect(() =>
+      validateAnalysisResult({
+        ...validResult,
+        information_quality_score: 0,
+        misinformation_risk_score: 0,
+        manipulation_pressure_score: 0
+      })
+    ).toThrow(/Component scores/);
   });
 });

@@ -72,12 +72,14 @@ Each analysis result includes:
 
 - `marker`: `green`, `yellow`, or `red`
 - `confidence`: `low`, `medium`, or `high`
-- `information_quality_score`: 0-100
-- `misinformation_risk_score`: 0-100
-- `manipulation_pressure_score`: 0-100
-- `overall_risk_score`: 0-100
+- `information_quality_score`: 0-100 normalized signal-mix share
+- `misinformation_risk_score`: 0-100 normalized signal-mix share
+- `manipulation_pressure_score`: 0-100 normalized signal-mix share
+- `overall_risk_score`: separate 0-100 risk rating
 - `signals`: typed evidence objects
 - `summary`, `counter_reading`, and `suggested_user_action`
+
+The three signal-mix scores must add up to exactly 100; `overall_risk_score` is displayed separately and is not included in that sum.
 
 The UI frames results as risk and information-quality signals, not truth rulings or judgments about author intent.
 

@@ -7,9 +7,9 @@ import type { AnalysisResult, ExtractedPost } from "../src/shared/types";
 const validAnalysis: AnalysisResult = {
   marker: "red",
   confidence: "medium",
-  information_quality_score: 28,
-  misinformation_risk_score: 76,
-  manipulation_pressure_score: 82,
+  information_quality_score: 15,
+  misinformation_risk_score: 41,
+  manipulation_pressure_score: 44,
   overall_risk_score: 79,
   summary: "The post relies on urgency and unsupported broad claims.",
   signals: [

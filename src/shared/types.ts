@@ -1,4 +1,4 @@
-export const PROMPT_VERSION = "feedlens-v1";
+export const PROMPT_VERSION = "feedlens-v2";
 
 export type SupportedPlatformId = "linkedin" | "x";
 export type Marker = "green" | "yellow" | "red";

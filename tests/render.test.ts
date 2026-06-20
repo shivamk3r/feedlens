@@ -6,9 +6,9 @@ import type { AnalysisResult, FeedLensSettings } from "../src/shared/types";
 const result: AnalysisResult = {
   marker: "red",
   confidence: "medium",
-  information_quality_score: 28,
-  misinformation_risk_score: 76,
-  manipulation_pressure_score: 82,
+  information_quality_score: 15,
+  misinformation_risk_score: 41,
+  manipulation_pressure_score: 44,
   overall_risk_score: 79,
   summary: "This post relies on urgency and unsupported broad claims.",
   signals: [
@@ -84,9 +84,25 @@ describe("content marker rendering", () => {
     expect(detail?.hidden).toBe(true);
     expect(detail?.textContent).toContain("High risk");
     expect(detail?.textContent).toContain("medium confidence - gemini");
-    expect(detail?.textContent).toContain("Overall risk 79");
+    expect(detail?.textContent).toContain("Overall risk 79/100");
     expect(detail?.textContent).toContain("act now");
     expect(detail?.textContent).toContain("Suggested action");
+  });
+
+  it("renders normalized component scores as a signal mix separate from overall risk", () => {
+    const host = document.createElement("article");
+
+    renderMarker({ host, result, source: "gemini", settings: settings() });
+
+    const scores = host.querySelector<HTMLElement>(".feedlens-detail__scores");
+    const signalMix = scores?.querySelector<HTMLElement>(".feedlens-detail__score-mix");
+    const overallRisk = scores?.querySelector<HTMLElement>(".feedlens-detail__overall-risk");
+
+    expect(scores?.textContent).toContain("Signal mix");
+    expect(signalMix?.textContent).toContain("Info quality 15%");
+    expect(signalMix?.textContent).toContain("Misinformation 41%");
+    expect(signalMix?.textContent).toContain("Pressure 44%");
+    expect(overallRisk?.textContent).toBe("Overall risk 79/100");
   });
 
   it("replaces direct Lens details when rendering a new marker", () => {

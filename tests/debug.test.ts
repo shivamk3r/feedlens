@@ -65,7 +65,7 @@ describe("debug log storage", () => {
         retryable: true,
         message: "Rate limited",
         responseBody: "raw response",
-        promptVersion: "feedlens-v1",
+        promptVersion: "feedlens-v2",
         evidence: "quoted evidence",
         url: "https://example.test/post",
         array: ["not flat"]

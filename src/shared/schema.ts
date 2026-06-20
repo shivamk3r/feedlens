@@ -57,25 +57,29 @@ export const analysisResponseSchema = {
       type: "integer",
       minimum: 0,
       maximum: 100,
-      description: "Higher means more useful, specific, supported, and nuanced."
+      description:
+        "Normalized signal-mix share for useful, specific, supported, and nuanced information. This plus misinformation_risk_score and manipulation_pressure_score must equal 100."
     },
     misinformation_risk_score: {
       type: "integer",
       minimum: 0,
       maximum: 100,
-      description: "Higher means more unsupported, misleading, unverifiable, or overconfident."
+      description:
+        "Normalized signal-mix share for unsupported, misleading, unverifiable, or overconfident claims. This plus information_quality_score and manipulation_pressure_score must equal 100."
     },
     manipulation_pressure_score: {
       type: "integer",
       minimum: 0,
       maximum: 100,
-      description: "Higher means more psychological pressure or emotional steering."
+      description:
+        "Normalized signal-mix share for psychological pressure or emotional steering. This plus information_quality_score and misinformation_risk_score must equal 100."
     },
     overall_risk_score: {
       type: "integer",
       minimum: 0,
       maximum: 100,
-      description: "Derived from misinformation risk and manipulation pressure."
+      description:
+        "Separate 0-100 overall risk score derived from misinformation risk and manipulation pressure; not included in the normalized signal mix."
     },
     summary: {
       type: "string",
@@ -169,19 +173,19 @@ export function validateAnalysisResult(value: unknown): AnalysisResult {
       return [];
     }
   }).slice(0, 12);
+  const [informationQualityScore, misinformationRiskScore, manipulationPressureScore] =
+    normalizeComponentScores([
+      requireScore(value.information_quality_score, "information_quality_score"),
+      requireScore(value.misinformation_risk_score, "misinformation_risk_score"),
+      requireScore(value.manipulation_pressure_score, "manipulation_pressure_score")
+    ]);
 
   return {
     marker,
     confidence,
-    information_quality_score: requireScore(value.information_quality_score, "information_quality_score"),
-    misinformation_risk_score: requireScore(
-      value.misinformation_risk_score,
-      "misinformation_risk_score"
-    ),
-    manipulation_pressure_score: requireScore(
-      value.manipulation_pressure_score,
-      "manipulation_pressure_score"
-    ),
+    information_quality_score: informationQualityScore,
+    misinformation_risk_score: misinformationRiskScore,
+    manipulation_pressure_score: manipulationPressureScore,
     overall_risk_score: requireScore(value.overall_risk_score, "overall_risk_score"),
     summary: requireString(value.summary, "summary", 500),
     signals,
@@ -217,6 +221,35 @@ function requireScore(value: unknown, label: string): number {
   }
 
   return rounded;
+}
+
+function normalizeComponentScores(scores: number[]): [number, number, number] {
+  const total = scores.reduce((sum, score) => sum + score, 0);
+
+  if (total <= 0) {
+    throw new Error("Component scores must have a positive total.");
+  }
+
+  if (total === 100) {
+    return scores as [number, number, number];
+  }
+
+  const exactShares = scores.map((score) => (score / total) * 100);
+  const normalized = exactShares.map(Math.floor);
+  const remaining = 100 - normalized.reduce((sum, score) => sum + score, 0);
+  const rankedRemainders = exactShares
+    .map((share, index) => ({ index, remainder: share - Math.floor(share) }))
+    .sort((left, right) => right.remainder - left.remainder || left.index - right.index);
+
+  for (let index = 0; index < remaining; index += 1) {
+    const scoreIndex = rankedRemainders[index]?.index;
+    if (scoreIndex === undefined) {
+      break;
+    }
+    normalized[scoreIndex] = (normalized[scoreIndex] ?? 0) + 1;
+  }
+
+  return normalized as [number, number, number];
 }
 
 function requireString(value: unknown, label: string, maxLength: number): string {

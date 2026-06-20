@@ -125,12 +125,24 @@ function createDetail(result: AnalysisResult, source: "cache" | "gemini"): HTMLE
 
   const scores = document.createElement("div");
   scores.className = "feedlens-detail__scores";
-  scores.append(
-    scorePill("Info", result.information_quality_score),
-    scorePill("Misinformation", result.misinformation_risk_score),
-    scorePill("Pressure", result.manipulation_pressure_score),
-    scorePill("Overall risk", result.overall_risk_score)
+
+  const signalMixLabel = document.createElement("strong");
+  signalMixLabel.className = "feedlens-detail__scores-label";
+  signalMixLabel.textContent = "Signal mix";
+
+  const signalMix = document.createElement("div");
+  signalMix.className = "feedlens-detail__score-mix";
+  signalMix.append(
+    scorePill("Info quality", result.information_quality_score, "%"),
+    scorePill("Misinformation", result.misinformation_risk_score, "%"),
+    scorePill("Pressure", result.manipulation_pressure_score, "%")
   );
+
+  const overallRisk = document.createElement("div");
+  overallRisk.className = "feedlens-detail__overall-risk";
+  overallRisk.textContent = `Overall risk ${result.overall_risk_score}/100`;
+
+  scores.append(signalMixLabel, signalMix, overallRisk);
 
   const summary = document.createElement("p");
   summary.className = "feedlens-detail__summary";
@@ -279,10 +291,10 @@ function toPixels(value: number): string {
   return `${Math.max(0, Math.round(value))}px`;
 }
 
-function scorePill(label: string, score: number): HTMLElement {
+function scorePill(label: string, score: number, suffix = ""): HTMLElement {
   const pill = document.createElement("span");
   pill.className = "feedlens-detail__score";
-  pill.textContent = `${label} ${score}`;
+  pill.textContent = `${label} ${score}${suffix}`;
   return pill;
 }
 

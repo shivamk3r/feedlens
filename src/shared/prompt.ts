@@ -35,10 +35,11 @@ Marker guidance:
 - Red: high misinformation risk, strong manipulation pressure, fear, shame, status anxiety, artificial urgency, or self-worth pressure.
 
 Score guidance:
-- information_quality_score: 0-100, higher means more useful, specific, supported, and nuanced.
-- misinformation_risk_score: 0-100, higher means more unsupported, misleading, unverifiable, or overconfident.
-- manipulation_pressure_score: 0-100, higher means more psychological pressure or emotional steering.
-- overall_risk_score: 0-100, derived from misinformation risk and manipulation pressure.
+- information_quality_score: 0-100 signal-mix share for useful, specific, supported, and nuanced information.
+- misinformation_risk_score: 0-100 signal-mix share for unsupported, misleading, unverifiable, or overconfident claims.
+- manipulation_pressure_score: 0-100 signal-mix share for psychological pressure or emotional steering.
+- The three signal-mix scores above must be integers that add up to exactly 100.
+- overall_risk_score: separate 0-100 overall risk rating derived from misinformation risk and manipulation pressure. Do not include it in the signal-mix sum.
 
 Recency guidance:
 - The post may discuss events newer than your model knowledge.
