@@ -1,5 +1,30 @@
 # Changelog
 
+## v0.1.2 - X Timeline and Inline Lens Details
+
+FeedLens v0.1.2 expands the developer beta from LinkedIn-only coverage to visible LinkedIn and supported X timeline posts, while keeping the product Gemini-only, local-first, and packaged for GitHub release ZIP testing rather than Chrome Web Store distribution.
+
+### Added
+
+- Added X home and profile timeline support alongside LinkedIn, with route checks that avoid unsupported X pages.
+- Added inline Lens details with scores, signals, evidence, counter-reading, and suggested action directly on analyzed posts.
+- Added FeedLens extension icon assets for the manifest and browser action.
+- Added a development-only debug log dashboard for local browser testing; production release builds exclude debug assets.
+
+### Changed
+
+- Replaced the side-panel result flow with inline post details and removed the `sidePanel` manifest permission.
+- Hardened Gemini response handling for wrapped, truncated, and invalid JSON responses.
+- Normalized component scoring, calibrated recent-news guidance, improved setup readiness status, and prefetched nearby visible posts.
+- Clarified release and debug build workflows in documentation.
+
+### Notes
+
+- FeedLens is still not published on the Chrome Web Store.
+- Gemini remains the only supported provider.
+- Users still bring their own Gemini API key and must accept the privacy notice before analysis runs.
+- The release asset `feedlens-v0.1.2.zip` contains a production `dist/` folder without the dev-only debug log page.
+
 ## v0.1.1 - Developer Beta Readiness
 
 FeedLens v0.1.1 updates the public developer-beta packaging and documentation after the v0.1.0 MVP release. Runtime analysis behavior remains Gemini-only and local-first.
