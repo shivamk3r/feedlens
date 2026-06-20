@@ -30,6 +30,7 @@ const visiblePosts = new Map<string, VisiblePostState>();
 const POST_LOOKAHEAD_VIEWPORT_RATIO = 1;
 const MIN_POST_LOOKAHEAD_PIXELS = 600;
 const MAX_POST_LOOKAHEAD_PIXELS = 1600;
+const EXTENSION_CONTEXT_INVALIDATED_MESSAGE = "Extension context invalidated.";
 const platform = getCurrentPlatformAdapter();
 let settings: FeedLensSettings | undefined;
 let hasApiKey = false;
@@ -37,6 +38,7 @@ let manualPaused = false;
 let scanTimer: number | undefined;
 let lastError: string | undefined;
 let observer: MutationObserver | undefined;
+let extensionContextValid = true;
 
 bootstrap();
 
@@ -49,19 +51,38 @@ function bootstrap(): void {
   document.documentElement.dataset.feedlensPlatform = platform.id;
   logDebug("bootstrap", { host: location.hostname, platform: platform.id });
   chrome.runtime.onMessage.addListener(handleContentMessage);
-  chrome.storage.onChanged.addListener((changes, areaName) => {
-    if (areaName === "local" && Object.keys(changes).some((key) => key.startsWith("feedlens."))) {
-      void refreshStatus().then(() => scheduleScan());
-    }
-  });
+  chrome.storage.onChanged.addListener(handleStorageChanged);
 
-  window.addEventListener("scroll", () => scheduleScan(), { passive: true });
-  window.addEventListener("focus", () => scheduleScan(), { passive: true });
+  window.addEventListener("scroll", handlePageActivity, { passive: true });
+  window.addEventListener("focus", handlePageActivity, { passive: true });
 
-  observer = new MutationObserver(() => scheduleScan());
+  observer = new MutationObserver(handlePageActivity);
   observer.observe(document.documentElement, { childList: true, subtree: true });
 
-  void refreshStatus().then(() => scheduleScan());
+  runSafely(async () => {
+    await refreshStatus();
+    scheduleScan();
+  });
+}
+
+function handleStorageChanged(
+  changes: Record<string, chrome.storage.StorageChange>,
+  areaName: string
+): void {
+  if (!extensionContextValid) {
+    return;
+  }
+
+  if (areaName === "local" && Object.keys(changes).some((key) => key.startsWith("feedlens."))) {
+    runSafely(async () => {
+      await refreshStatus();
+      scheduleScan();
+    });
+  }
+}
+
+function handlePageActivity(): void {
+  scheduleScan();
 }
 
 function handleContentMessage(
@@ -69,7 +90,11 @@ function handleContentMessage(
   _sender: chrome.runtime.MessageSender,
   sendResponse: (response?: unknown) => void
 ): true {
-  void (async () => {
+  runSafely(async () => {
+    if (!extensionContextValid) {
+      return;
+    }
+
     switch (message.type) {
       case "feedlens-content:getState":
         sendResponse(getContentState());
@@ -104,7 +129,12 @@ function handleContentMessage(
       default:
         exhaustive(message);
     }
-  })().catch((error: unknown) => {
+  }, (error: unknown) => {
+    if (isExtensionContextInvalidated(error)) {
+      invalidateExtensionContext();
+      return;
+    }
+
     lastError = error instanceof Error ? error.message : "FeedLens hit an unexpected content error.";
     logDebug(
       "content_message_error",
@@ -118,7 +148,15 @@ function handleContentMessage(
 }
 
 async function refreshStatus(): Promise<void> {
+  if (!extensionContextValid) {
+    return;
+  }
+
   const status = await sendBackgroundMessage<SetupStatus>({ type: "feedlens:getStatus" });
+  if (!extensionContextValid) {
+    return;
+  }
+
   settings = status.settings;
   hasApiKey = status.hasApiKey;
   logDebug("status_refreshed", {
@@ -131,14 +169,20 @@ async function refreshStatus(): Promise<void> {
 }
 
 function scheduleScan(delay = 500): void {
+  if (!extensionContextValid) {
+    return;
+  }
+
   window.clearTimeout(scanTimer);
   scanTimer = window.setTimeout(() => {
-    void scanVisible({ force: false, manual: false });
+    runSafely(async () => {
+      await scanVisible({ force: false, manual: false });
+    });
   }, delay);
 }
 
 async function scanVisible({ force, manual }: { force: boolean; manual: boolean }): Promise<void> {
-  if (!platform) {
+  if (!platform || !extensionContextValid) {
     return;
   }
 
@@ -340,7 +384,20 @@ function getPostLookaheadPixels(): number {
 }
 
 function sendBackgroundMessage<T = unknown>(message: BackgroundMessage): Promise<T> {
-  return chrome.runtime.sendMessage(message) as Promise<T>;
+  if (!extensionContextValid) {
+    return Promise.reject(new Error(EXTENSION_CONTEXT_INVALIDATED_MESSAGE));
+  }
+
+  return (async () => {
+    try {
+      return (await chrome.runtime.sendMessage(message)) as T;
+    } catch (error) {
+      if (isExtensionContextInvalidated(error)) {
+        invalidateExtensionContext();
+      }
+      throw error;
+    }
+  })();
 }
 
 function logDebug(
@@ -348,14 +405,69 @@ function logDebug(
   payload?: Record<string, string | number | boolean>,
   severity: AppendDebugLogRequest["severity"] = "info"
 ): void {
-  if (!isDebugLoggingEnabled()) {
+  if (!isDebugLoggingEnabled() || !extensionContextValid) {
     return;
   }
 
   void sendBackgroundMessage({
     type: "feedlens:appendDebugLog",
     payload: { source: "content", severity, event, payload }
-  }).catch(() => undefined);
+  }).catch((error: unknown) => {
+    if (isExtensionContextInvalidated(error)) {
+      invalidateExtensionContext();
+    }
+  });
+}
+
+function runSafely(
+  task: () => Promise<void>,
+  onError: (error: unknown) => void = handleAsyncError
+): void {
+  void task().catch(onError);
+}
+
+function handleAsyncError(error: unknown): void {
+  if (isExtensionContextInvalidated(error)) {
+    invalidateExtensionContext();
+    return;
+  }
+
+  logDebug(
+    "content_async_error",
+    { name: error instanceof Error ? error.name || "Error" : "unknown" },
+    "error"
+  );
+}
+
+function isExtensionContextInvalidated(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.toLowerCase().includes("extension context invalidated");
+}
+
+function invalidateExtensionContext(): void {
+  if (!extensionContextValid) {
+    return;
+  }
+
+  extensionContextValid = false;
+  window.clearTimeout(scanTimer);
+  scanTimer = undefined;
+  observer?.disconnect();
+  observer = undefined;
+  window.removeEventListener("scroll", handlePageActivity);
+  window.removeEventListener("focus", handlePageActivity);
+
+  try {
+    chrome.storage.onChanged.removeListener(handleStorageChanged);
+  } catch {
+    // The extension runtime is already gone; local page cleanup above is enough.
+  }
+
+  try {
+    chrome.runtime.onMessage.removeListener(handleContentMessage);
+  } catch {
+    // The extension runtime is already gone; local page cleanup above is enough.
+  }
 }
 
 function exhaustive(value: never): never {

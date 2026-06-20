@@ -46,12 +46,18 @@ export interface ChromeMock {
     openOptionsPage: ReturnType<typeof vi.fn>;
     sendMessage: ReturnType<typeof vi.fn>;
     onInstalled: { addListener: ReturnType<typeof vi.fn> };
-    onMessage: { addListener: ReturnType<typeof vi.fn> };
+    onMessage: {
+      addListener: ReturnType<typeof vi.fn>;
+      removeListener: ReturnType<typeof vi.fn>;
+    };
   };
   storage: {
     local: MemoryStorageArea;
     session: MemoryStorageArea;
-    onChanged: { addListener: ReturnType<typeof vi.fn> };
+    onChanged: {
+      addListener: ReturnType<typeof vi.fn>;
+      removeListener: ReturnType<typeof vi.fn>;
+    };
   };
   tabs: {
     create: ReturnType<typeof vi.fn>;
@@ -67,12 +73,12 @@ export function createChromeMock(): ChromeMock {
       openOptionsPage: vi.fn(async () => undefined),
       sendMessage: vi.fn(async () => undefined),
       onInstalled: { addListener: vi.fn() },
-      onMessage: { addListener: vi.fn() }
+      onMessage: { addListener: vi.fn(), removeListener: vi.fn() }
     },
     storage: {
       local: new MemoryStorageArea(),
       session: new MemoryStorageArea(),
-      onChanged: { addListener: vi.fn() }
+      onChanged: { addListener: vi.fn(), removeListener: vi.fn() }
     },
     tabs: {
       create: vi.fn(async () => undefined),
