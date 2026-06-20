@@ -36,6 +36,33 @@ describe("debug log storage", () => {
     expect(JSON.stringify(getChromeMock().storage.session.data)).not.toContain("raw LinkedIn post text");
   });
 
+  it("keeps safe timing, platform, and outcome metadata", () => {
+    expect(
+      sanitizeDebugPayload({
+        platform: "linkedin",
+        hash: "abc123",
+        source: "gemini",
+        durationMs: 1240,
+        code: "invalid_response",
+        retryable: true,
+        marker: "yellow",
+        confidence: "medium",
+        purpose: "post_analysis",
+        responseBody: "raw response"
+      })
+    ).toEqual({
+      platform: "linkedin",
+      hash: "abc123",
+      source: "gemini",
+      durationMs: 1240,
+      code: "invalid_response",
+      retryable: true,
+      marker: "yellow",
+      confidence: "medium",
+      purpose: "post_analysis"
+    });
+  });
+
   it("keeps only the newest 200 debug logs", async () => {
     for (let index = 0; index < 205; index += 1) {
       await appendDebugLog({

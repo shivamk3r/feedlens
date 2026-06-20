@@ -62,6 +62,14 @@ describe("Gemini analysis service", () => {
     );
     expect(body.generationConfig.responseFormat).toBeUndefined();
     expect(body.contents[0].parts[0].text).toContain("Analyze this visible social post");
+
+    const successLog = (await getDebugLogs()).find((log) => log.event === "gemini_success");
+    expect(successLog?.payload).toMatchObject({
+      purpose: "post_analysis",
+      durationMs: expect.any(Number),
+      marker: validAnalysis.marker,
+      confidence: validAnalysis.confidence
+    });
   });
 
   it("maps Gemini rate limits to a retryable FeedLens error", async () => {
@@ -76,6 +84,15 @@ describe("Gemini analysis service", () => {
       error: { code: "rate_limited", retryable: true }
     });
     expect(fetchImpl).toHaveBeenCalledTimes(1);
+
+    const httpErrorLog = (await getDebugLogs()).find((log) => log.event === "gemini_http_error");
+    expect(httpErrorLog?.payload).toMatchObject({
+      hash: post.hash,
+      platform: post.platform,
+      purpose: "post_analysis",
+      status: 429,
+      durationMs: expect.any(Number)
+    });
   });
 
   it("rejects invalid model JSON as an invalid response", async () => {
@@ -114,6 +131,10 @@ describe("Gemini analysis service", () => {
       textLength: JSON.stringify({ marker: "red" }).length,
       hasText: true,
       hasBalancedObject: true,
+      purpose: "post_analysis",
+      hash: post.hash,
+      platform: post.platform,
+      durationMs: expect.any(Number),
       parseCategory: "validation_error"
     });
     const serializedLogs = JSON.stringify(await getDebugLogs());
@@ -180,6 +201,16 @@ describe("Gemini analysis service", () => {
     expect(String(url)).not.toContain("candidate-key");
     expect((init as RequestInit).headers).toMatchObject({ "x-goog-api-key": "candidate-key" });
     expect(String((init as RequestInit).body)).toContain("FeedLens connection check");
+
+    const requestStartLog = (await getDebugLogs()).find(
+      (log) => log.event === "gemini_request_start"
+    );
+    const successLog = (await getDebugLogs()).find((log) => log.event === "gemini_success");
+    expect(requestStartLog?.payload).toMatchObject({ purpose: "validation" });
+    expect(successLog?.payload).toMatchObject({
+      purpose: "validation",
+      durationMs: expect.any(Number)
+    });
   });
 
   it("returns a sanitized failure when a Gemini key cannot be used", async () => {

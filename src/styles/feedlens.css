@@ -119,6 +119,77 @@ textarea {
   font-size: 12px;
 }
 
+.fl-debug-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.fl-debug-stat {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+  border: 1px solid var(--fl-border);
+  border-radius: 8px;
+  background: var(--fl-surface);
+  padding: 12px;
+}
+
+.fl-debug-stat strong {
+  font-size: 20px;
+  line-height: 1.15;
+}
+
+.fl-debug-stat__label {
+  color: #334038;
+  font-size: 12px;
+  font-weight: 760;
+}
+
+.fl-debug-filters {
+  gap: 14px;
+}
+
+.fl-debug-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(130px, 1fr));
+  gap: 10px;
+}
+
+.fl-debug-filter-search {
+  grid-column: span 1;
+}
+
+.fl-debug-time-range {
+  display: grid;
+  gap: 8px;
+}
+
+.fl-debug-range-inputs {
+  display: grid;
+  gap: 6px;
+}
+
+.fl-debug-range-inputs input[type="range"] {
+  width: 100%;
+  margin: 0;
+  accent-color: var(--fl-blue);
+}
+
+.fl-debug-chip {
+  display: inline-flex;
+  max-width: 180px;
+  overflow: hidden;
+  align-items: center;
+  border: 1px solid var(--fl-border);
+  border-radius: 999px;
+  color: var(--fl-muted);
+  font-size: 12px;
+  padding: 3px 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .fl-debug-log__title {
   display: flex;
   min-width: 0;
@@ -297,6 +368,28 @@ textarea {
 .fl-grid-2 {
   display: grid;
   gap: 12px;
+}
+
+@media (max-width: 920px) {
+  .fl-debug-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .fl-debug-filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .feedlens-debug .fl-topbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .fl-debug-stats,
+  .fl-debug-filter-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .feedlens-post {

@@ -20,6 +20,7 @@ import {
   type AnalysisResult,
   type AnalyzePostRequest,
   type AnalyzePostResponse,
+  type SupportedPlatformId,
   type ValidateApiKeyResponse
 } from "../shared/types";
 
@@ -53,6 +54,9 @@ interface GeminiErrorResponse {
 interface GeminiCallOptions {
   attempt?: number;
   maxAttempts?: number;
+  hash?: string;
+  platform?: SupportedPlatformId;
+  purpose?: "post_analysis" | "validation";
 }
 
 export async function analyzePost({
@@ -62,7 +66,7 @@ export async function analyzePost({
   await appendDebugLog({
     source: "background",
     event: "analyze_start",
-    payload: { hash: post.hash, force }
+    payload: { hash: post.hash, platform: post.platform, force, purpose: "post_analysis" }
   });
 
   const settings = await getSettings();
@@ -72,7 +76,12 @@ export async function analyzePost({
       source: "background",
       severity: "warn",
       event: "analyze_blocked",
-      payload: { hash: post.hash, code: "disabled" }
+      payload: {
+        hash: post.hash,
+        platform: post.platform,
+        code: "disabled",
+        purpose: "post_analysis"
+      }
     });
     return {
       ok: false,
@@ -86,7 +95,12 @@ export async function analyzePost({
       source: "background",
       severity: "warn",
       event: "analyze_blocked",
-      payload: { hash: post.hash, code: "privacy_not_accepted" }
+      payload: {
+        hash: post.hash,
+        platform: post.platform,
+        code: "privacy_not_accepted",
+        purpose: "post_analysis"
+      }
     });
     return {
       ok: false,
@@ -105,7 +119,12 @@ export async function analyzePost({
       source: "background",
       severity: "warn",
       event: "analyze_blocked",
-      payload: { hash: post.hash, code: "missing_api_key" }
+      payload: {
+        hash: post.hash,
+        platform: post.platform,
+        code: "missing_api_key",
+        purpose: "post_analysis"
+      }
     });
     return {
       ok: false,
@@ -121,7 +140,13 @@ export async function analyzePost({
       await appendDebugLog({
         source: "background",
         event: "cache_hit",
-        payload: { hash: post.hash, model: cached.model, version: cached.promptVersion }
+        payload: {
+          hash: post.hash,
+          platform: post.platform,
+          model: cached.model,
+          version: cached.promptVersion,
+          purpose: "post_analysis"
+        }
       });
 
       return { ok: true, hash: post.hash, result: cached.result, source: "cache" };
@@ -132,14 +157,21 @@ export async function analyzePost({
     await appendDebugLog({
       source: "background",
       event: "cache_miss",
-      payload: { hash: post.hash, model: settings.model, version: PROMPT_VERSION }
+      payload: {
+        hash: post.hash,
+        platform: post.platform,
+        model: settings.model,
+        version: PROMPT_VERSION,
+        purpose: "post_analysis"
+      }
     });
     const result = await callGeminiForPostWithRetry(
       post.text,
       settings,
       apiKey,
       platformLabel(post.platform),
-      post.hash
+      post.hash,
+      post.platform
     );
     const createdAt = new Date().toISOString();
 
@@ -158,9 +190,11 @@ export async function analyzePost({
       event: "analyze_success",
       payload: {
         hash: post.hash,
+        platform: post.platform,
         marker: result.marker,
         confidence: result.confidence,
-        signalCount: result.signals.length
+        signalCount: result.signals.length,
+        purpose: "post_analysis"
       }
     });
 
@@ -171,7 +205,13 @@ export async function analyzePost({
       source: "background",
       severity: normalized.retryable ? "warn" : "error",
       event: "analyze_error",
-      payload: { hash: post.hash, code: normalized.code, retryable: normalized.retryable }
+      payload: {
+        hash: post.hash,
+        platform: post.platform,
+        code: normalized.code,
+        retryable: normalized.retryable,
+        purpose: "post_analysis"
+      }
     });
     return {
       ok: false,
@@ -197,11 +237,13 @@ export async function validateGeminiApiKey(
 
   try {
     const settings = await getSettings();
-    await callGemini(VALIDATION_POST_TEXT, settings, trimmed, fetchImpl);
+    await callGemini(VALIDATION_POST_TEXT, settings, trimmed, fetchImpl, undefined, {
+      purpose: "validation"
+    });
     await appendDebugLog({
       source: "gemini",
       event: "key_validation_success",
-      payload: { model: settings.model }
+      payload: { model: settings.model, purpose: "validation" }
     });
     return { ok: true, checkedAt: new Date().toISOString() };
   } catch (error) {
@@ -210,7 +252,7 @@ export async function validateGeminiApiKey(
       source: "gemini",
       severity: normalized.retryable ? "warn" : "error",
       event: "key_validation_error",
-      payload: { code: normalized.code, retryable: normalized.retryable }
+      payload: { code: normalized.code, retryable: normalized.retryable, purpose: "validation" }
     });
     return {
       ok: false,
@@ -240,10 +282,20 @@ export async function callGemini(
   const model = settings.model.replace(/^models\//, "");
   const attempt = options.attempt ?? 1;
   const maxAttempts = options.maxAttempts ?? 1;
+  const purpose = options.purpose ?? "post_analysis";
+  const requestStartedAt = nowMs();
+  const logContext = {
+    model,
+    purpose,
+    attempt,
+    maxAttempts,
+    ...(options.hash ? { hash: options.hash } : {}),
+    ...(options.platform ? { platform: options.platform } : {})
+  };
   await appendDebugLog({
     source: "gemini",
     event: "gemini_request_start",
-    payload: { model, chars: postText.length, attempt, maxAttempts }
+    payload: { ...logContext, chars: postText.length }
   });
   const response = await fetchImpl(`${GEMINI_ENDPOINT}/${encodeURIComponent(model)}:generateContent`, {
     method: "POST",
@@ -259,7 +311,7 @@ export async function callGemini(
       source: "gemini",
       severity: response.status === 429 || response.status >= 500 ? "warn" : "error",
       event: "gemini_http_error",
-      payload: { model, status: response.status }
+      payload: { ...logContext, status: response.status, durationMs: elapsedMs(requestStartedAt) }
     });
     throw await geminiHttpError(response);
   }
@@ -279,9 +331,13 @@ export async function callGemini(
       event: "gemini_invalid_response",
       payload: {
         model,
+        purpose,
         reason: "missing_text",
         attempt,
         maxAttempts,
+        durationMs: elapsedMs(requestStartedAt),
+        ...(options.hash ? { hash: options.hash } : {}),
+        ...(options.platform ? { platform: options.platform } : {}),
         ...responseDiagnostics
       }
     });
@@ -295,8 +351,12 @@ export async function callGemini(
       event: "gemini_success",
       payload: {
         model,
+        purpose,
         attempt,
         maxAttempts,
+        durationMs: elapsedMs(requestStartedAt),
+        ...(options.hash ? { hash: options.hash } : {}),
+        ...(options.platform ? { platform: options.platform } : {}),
         marker: result.marker,
         confidence: result.confidence,
         signalCount: result.signals.length
@@ -310,9 +370,13 @@ export async function callGemini(
       event: "gemini_invalid_response",
       payload: {
         model,
+        purpose,
         reason: error instanceof Error ? error.name || "validation_error" : "validation_error",
         attempt,
         maxAttempts,
+        durationMs: elapsedMs(requestStartedAt),
+        ...(options.hash ? { hash: options.hash } : {}),
+        ...(options.platform ? { platform: options.platform } : {}),
         ...getInvalidResponseDiagnostics(error, responseDiagnostics)
       }
     });
@@ -329,13 +393,17 @@ async function callGeminiForPostWithRetry(
   settings: Awaited<ReturnType<typeof getSettings>>,
   apiKey: string,
   requestPlatformLabel: string,
-  hash: string
+  hash: string,
+  platform: SupportedPlatformId
 ): Promise<AnalysisResult> {
   for (let attempt = 1; attempt <= POST_ANALYSIS_MAX_ATTEMPTS; attempt += 1) {
     try {
       return await callGemini(postText, settings, apiKey, requestPlatformLabel, undefined, {
         attempt,
-        maxAttempts: POST_ANALYSIS_MAX_ATTEMPTS
+        maxAttempts: POST_ANALYSIS_MAX_ATTEMPTS,
+        hash,
+        platform,
+        purpose: "post_analysis"
       });
     } catch (error) {
       if (attempt < POST_ANALYSIS_MAX_ATTEMPTS && isInvalidGeminiResponseError(error)) {
@@ -345,10 +413,12 @@ async function callGeminiForPostWithRetry(
           event: "analyze_retry",
           payload: {
             hash,
+            platform,
             code: "invalid_response",
             attempt,
             nextAttempt: attempt + 1,
-            maxAttempts: POST_ANALYSIS_MAX_ATTEMPTS
+            maxAttempts: POST_ANALYSIS_MAX_ATTEMPTS,
+            purpose: "post_analysis"
           }
         });
         continue;
@@ -441,4 +511,12 @@ function getInvalidResponseDiagnostics(
 
 function countArray(value: unknown[] | undefined): number {
   return Array.isArray(value) ? value.length : 0;
+}
+
+function nowMs(): number {
+  return performance.now();
+}
+
+function elapsedMs(startedAt: number): number {
+  return Math.max(0, Math.round(nowMs() - startedAt));
 }

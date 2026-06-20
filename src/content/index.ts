@@ -284,6 +284,8 @@ async function analyzeVisiblePost(
   post: ExtractedPost,
   force: boolean
 ): Promise<void> {
+  const startedAt = nowMs();
+
   if (!settings) {
     logDebug("analysis_skipped", { reason: "missing_settings", hash: post.hash }, "warn");
     return;
@@ -300,7 +302,8 @@ async function analyzeVisiblePost(
     logDebug("analysis_error", {
       hash: post.hash,
       code: "missing_api_key",
-      retryable: false
+      retryable: false,
+      durationMs: elapsedMs(startedAt)
     }, "warn");
     return;
   }
@@ -327,7 +330,9 @@ async function analyzeVisiblePost(
     logDebug("marker_rendered", {
       hash: post.hash,
       marker: response.result.marker,
-      source: response.source
+      source: response.source,
+      confidence: response.result.confidence,
+      durationMs: elapsedMs(startedAt)
     });
     return;
   }
@@ -348,7 +353,8 @@ async function analyzeVisiblePost(
   logDebug("analysis_error", {
     hash: post.hash,
     code: response.error.code,
-    retryable: response.error.retryable
+    retryable: response.error.retryable,
+    durationMs: elapsedMs(startedAt)
   }, response.error.retryable ? "warn" : "error");
 }
 
@@ -442,7 +448,12 @@ function logDebug(
 
   void sendBackgroundMessage({
     type: "feedlens:appendDebugLog",
-    payload: { source: "content", severity, event, payload }
+    payload: {
+      source: "content",
+      severity,
+      event,
+      payload: platform ? { platform: platform.id, ...payload } : payload
+    }
   }).catch((error: unknown) => {
     if (isExtensionContextInvalidated(error)) {
       invalidateExtensionContext();
@@ -473,6 +484,14 @@ function handleAsyncError(error: unknown): void {
 function isExtensionContextInvalidated(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
   return message.toLowerCase().includes("extension context invalidated");
+}
+
+function nowMs(): number {
+  return performance.now();
+}
+
+function elapsedMs(startedAt: number): number {
+  return Math.max(0, Math.round(nowMs() - startedAt));
 }
 
 function invalidateExtensionContext(): void {
