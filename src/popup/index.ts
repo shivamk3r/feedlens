@@ -24,15 +24,15 @@ async function render(state: PopupState = {}): Promise<void> {
     state.page ?? sendActiveTabMessage<ContentState>({ type: "feedlens-content:getState" }).catch(() => undefined)
   ]);
 
-  const configured = status.hasApiKey && status.settings.privacyAccepted;
+  const configured = status.setup.ready;
   const paused = !status.settings.enabled || page?.paused;
   const supportedPlatformOpen = Boolean(page?.supported);
   const platformName = page?.platformLabel ?? "supported platform";
   const tagline = configured
     ? page?.platformLabel
       ? `Ready on ${escapeHtml(page.platformLabel)}`
-      : "Configured"
-    : "Setup needed";
+      : status.setup.label
+    : status.setup.label;
 
   root.innerHTML = `
     <header class="fl-topbar">
@@ -41,7 +41,7 @@ async function render(state: PopupState = {}): Promise<void> {
         <div class="fl-brand__tagline">${tagline}</div>
       </div>
       <span class="${configured ? "fl-badge fl-badge--green" : "fl-badge fl-badge--yellow"}">
-        ${configured ? "Configured" : "Not configured"}
+        ${escapeHtml(status.setup.label)}
       </span>
     </header>
     <section class="fl-main">
@@ -49,7 +49,7 @@ async function render(state: PopupState = {}): Promise<void> {
       ${
         configured
           ? ""
-          : `<div class="fl-warning">Add your Gemini API key and accept the privacy notice before FeedLens analyzes visible posts.</div>`
+          : `<div class="fl-warning">${escapeHtml(status.setup.detail)}</div>`
       }
       ${
         supportedPlatformOpen

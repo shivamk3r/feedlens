@@ -105,7 +105,16 @@ export interface AppendDebugLogRequest {
 export interface SetupStatus {
   settings: FeedLensSettings;
   hasApiKey: boolean;
+  apiKeyHealth?: ApiKeyHealth;
+  setup: SetupReadiness;
   cacheEntryCount: number;
+}
+
+export interface SetupReadiness {
+  code: "missing_api_key" | "privacy_not_accepted" | "ready";
+  ready: boolean;
+  label: string;
+  detail: string;
 }
 
 export interface ApiKeyHealth {

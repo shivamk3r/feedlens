@@ -1,17 +1,46 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_SETTINGS } from "../src/shared/defaults";
+import type { ContentState, SetupStatus } from "../src/shared/types";
 import { getChromeMock } from "./helpers/chrome";
 
-const setupStatus = {
+const setupStatus: SetupStatus = {
   settings: {
     ...DEFAULT_SETTINGS,
     privacyAccepted: true
   },
   hasApiKey: true,
+  apiKeyHealth: {
+    status: "valid",
+    checkedAt: "2026-06-17T00:00:00.000Z",
+    model: DEFAULT_SETTINGS.model
+  },
+  setup: {
+    code: "ready",
+    ready: true,
+    label: "Ready",
+    detail: "Gemini analysis check passed."
+  },
   cacheEntryCount: 0
 };
 
-const contentState = {
+const privacyNeededStatus: SetupStatus = {
+  settings: DEFAULT_SETTINGS,
+  hasApiKey: true,
+  apiKeyHealth: {
+    status: "valid",
+    checkedAt: "2026-06-17T00:00:00.000Z",
+    model: DEFAULT_SETTINGS.model
+  },
+  setup: {
+    code: "privacy_not_accepted",
+    ready: false,
+    label: "Privacy needed",
+    detail: "Accept the privacy notice before FeedLens analyzes visible posts."
+  },
+  cacheEntryCount: 0
+};
+
+const contentState: ContentState = {
   detectedCount: 1,
   analyzedCount: 1,
   pendingCount: 0,
@@ -22,10 +51,10 @@ const contentState = {
   platformLabel: "LinkedIn"
 };
 
-async function loadPopup(): Promise<HTMLElement> {
+async function loadPopup(status: SetupStatus = setupStatus): Promise<HTMLElement> {
   vi.resetModules();
   const chromeMock = getChromeMock();
-  chromeMock.runtime.sendMessage.mockResolvedValue(setupStatus);
+  chromeMock.runtime.sendMessage.mockResolvedValue(status);
   chromeMock.tabs.sendMessage.mockResolvedValue(contentState);
   document.body.innerHTML = `<main id="feedlens-popup-root" class="fl-shell"></main>`;
   await import("../src/popup/index");
@@ -71,5 +100,13 @@ describe("popup debug entry", () => {
 
     expect(root.querySelector("#feedlens-debug")).toBeNull();
     expect(root.textContent).not.toContain("Debug logs");
+  });
+
+  it("keeps analysis disabled when key health exists but privacy is not accepted", async () => {
+    const root = await loadPopup(privacyNeededStatus);
+
+    expect(root.textContent).toContain("Privacy needed");
+    expect(root.textContent).toContain("Accept the privacy notice before FeedLens analyzes visible posts.");
+    expect(root.querySelector<HTMLButtonElement>("#feedlens-analyze")?.disabled).toBe(true);
   });
 });

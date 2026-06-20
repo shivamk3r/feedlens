@@ -6,6 +6,7 @@ import {
   getApiKeyHealth,
   getCacheEntryCount,
   getSettings,
+  getSetupStatus,
   hasApiKey,
   putCacheEntry,
   saveApiKey,
@@ -31,6 +32,83 @@ const result: AnalysisResult = {
 describe("extension storage helpers", () => {
   it("returns safe default settings", async () => {
     await expect(getSettings()).resolves.toEqual(DEFAULT_SETTINGS);
+  });
+
+  it("reports missing API key as not configured setup status", async () => {
+    await expect(getSetupStatus()).resolves.toMatchObject({
+      hasApiKey: false,
+      setup: {
+        code: "missing_api_key",
+        ready: false,
+        label: "Not configured",
+        detail: "No Gemini API key is saved."
+      }
+    });
+  });
+
+  it("requires privacy acceptance even when a saved key has passed validation", async () => {
+    await saveApiKey("test-key");
+    await saveApiKeyHealth({
+      status: "valid",
+      checkedAt: "2026-06-17T00:00:00.000Z",
+      model: DEFAULT_SETTINGS.model
+    });
+
+    await expect(getSetupStatus()).resolves.toMatchObject({
+      hasApiKey: true,
+      apiKeyHealth: {
+        status: "valid",
+        checkedAt: "2026-06-17T00:00:00.000Z",
+        model: DEFAULT_SETTINGS.model
+      },
+      setup: {
+        code: "privacy_not_accepted",
+        ready: false,
+        label: "Privacy needed",
+        detail: "Accept the privacy notice before FeedLens analyzes visible posts."
+      }
+    });
+  });
+
+  it("reports ready setup status with saved key health after privacy acceptance", async () => {
+    await saveApiKey("test-key");
+    await saveApiKeyHealth({
+      status: "valid",
+      checkedAt: "2026-06-17T00:00:00.000Z",
+      model: DEFAULT_SETTINGS.model
+    });
+    await saveSettings({ privacyAccepted: true });
+
+    await expect(getSetupStatus()).resolves.toMatchObject({
+      hasApiKey: true,
+      apiKeyHealth: {
+        status: "valid",
+        checkedAt: "2026-06-17T00:00:00.000Z",
+        model: DEFAULT_SETTINGS.model
+      },
+      setup: {
+        code: "ready",
+        ready: true,
+        label: "Ready",
+        detail: "Gemini analysis check passed."
+      }
+    });
+  });
+
+  it("reports ready setup status without treating key health as required", async () => {
+    await saveApiKey("test-key");
+    await saveSettings({ privacyAccepted: true });
+
+    await expect(getSetupStatus()).resolves.toMatchObject({
+      hasApiKey: true,
+      apiKeyHealth: undefined,
+      setup: {
+        code: "ready",
+        ready: true,
+        label: "Ready",
+        detail: "Gemini key saved and privacy notice accepted."
+      }
+    });
   });
 
   it("stores API keys in local storage by default and clears both key locations", async () => {

@@ -1,10 +1,28 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_SETTINGS } from "../src/shared/defaults";
-import { getSettings } from "../src/shared/storage";
+import { getSettings, getSetupStatus } from "../src/shared/storage";
+import type { BackgroundMessage, ValidateApiKeyResponse } from "../src/shared/types";
 import { getChromeMock } from "./helpers/chrome";
 
-async function loadOptionsPage(): Promise<HTMLElement> {
+async function loadOptionsPage(
+  validationResult?: ValidateApiKeyResponse | Error
+): Promise<HTMLElement> {
   vi.resetModules();
+  getChromeMock().runtime.sendMessage.mockImplementation(async (message: BackgroundMessage) => {
+    if (message.type === "feedlens:getStatus") {
+      return getSetupStatus();
+    }
+
+    if (message.type === "feedlens:validateApiKey") {
+      if (validationResult instanceof Error) {
+        throw validationResult;
+      }
+
+      return validationResult;
+    }
+
+    return undefined;
+  });
   document.body.innerHTML = `<main id="feedlens-options-root" class="fl-shell"></main>`;
   await import("../src/options/index");
   await settle();
@@ -44,12 +62,11 @@ describe("options page", () => {
 
   it("validates the API key before saving the key and privacy choice", async () => {
     const chromeMock = getChromeMock();
-    chromeMock.runtime.sendMessage.mockResolvedValue({
+    const root = await loadOptionsPage({
       ok: true,
       checkedAt: "2026-06-17T00:00:00.000Z"
     });
 
-    const root = await loadOptionsPage();
     const form = root.querySelector<HTMLFormElement>("#feedlens-settings-form")!;
     root.querySelector<HTMLInputElement>("#gemini-key")!.value = " test-key ";
     root.querySelector<HTMLInputElement>('input[name="privacyAccepted"]')!.checked = true;
@@ -80,9 +97,26 @@ describe("options page", () => {
     expect(root.textContent).toContain("Ready");
   });
 
+  it("does not show ready when a validated key is saved without privacy acceptance", async () => {
+    const root = await loadOptionsPage({
+      ok: true,
+      checkedAt: "2026-06-17T00:00:00.000Z"
+    });
+    const form = root.querySelector<HTMLFormElement>("#feedlens-settings-form")!;
+    root.querySelector<HTMLInputElement>("#gemini-key")!.value = " test-key ";
+    root.querySelector<HTMLInputElement>('input[name="privacyAccepted"]')!.checked = false;
+
+    form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    await settle();
+
+    expect(root.textContent).toContain("Privacy needed");
+    expect(root.textContent).toContain("Accept the privacy notice before FeedLens analyzes visible posts.");
+    expect(root.textContent).not.toContain("Gemini analysis check passed.");
+    await expect(getSettings()).resolves.toEqual(DEFAULT_SETTINGS);
+  });
+
   it("does not save an API key when Gemini validation fails", async () => {
-    const chromeMock = getChromeMock();
-    chromeMock.runtime.sendMessage.mockResolvedValue({
+    const root = await loadOptionsPage({
       ok: false,
       error: {
         code: "provider_error",
@@ -91,7 +125,6 @@ describe("options page", () => {
       }
     });
 
-    const root = await loadOptionsPage();
     const form = root.querySelector<HTMLFormElement>("#feedlens-settings-form")!;
     root.querySelector<HTMLInputElement>("#gemini-key")!.value = " bad-key ";
     root.querySelector<HTMLInputElement>('input[name="privacyAccepted"]')!.checked = true;
@@ -108,10 +141,7 @@ describe("options page", () => {
   });
 
   it("does not save an API key when the validation request fails", async () => {
-    const chromeMock = getChromeMock();
-    chromeMock.runtime.sendMessage.mockRejectedValue(new Error("background unavailable"));
-
-    const root = await loadOptionsPage();
+    const root = await loadOptionsPage(new Error("background unavailable"));
     const form = root.querySelector<HTMLFormElement>("#feedlens-settings-form")!;
     root.querySelector<HTMLInputElement>("#gemini-key")!.value = " candidate-key ";
 

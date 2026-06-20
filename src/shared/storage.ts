@@ -3,6 +3,7 @@ import type {
   ApiKeyHealth,
   AnalysisCacheEntry,
   FeedLensSettings,
+  SetupReadiness,
   SetupStatus
 } from "./types";
 
@@ -106,15 +107,51 @@ export async function getCacheEntryCount(): Promise<number> {
 
 export async function getSetupStatus(): Promise<SetupStatus> {
   const settings = await getSettings();
-  const [apiKeyExists, cacheEntryCount] = await Promise.all([
+  const [apiKeyExists, apiKeyHealth, cacheEntryCount] = await Promise.all([
     hasApiKey(settings),
+    getApiKeyHealth(),
     getCacheEntryCount()
   ]);
 
   return {
     settings,
     hasApiKey: apiKeyExists,
+    apiKeyHealth,
+    setup: getSetupReadiness(apiKeyExists, settings.privacyAccepted, apiKeyHealth),
     cacheEntryCount
+  };
+}
+
+function getSetupReadiness(
+  apiKeyExists: boolean,
+  privacyAccepted: boolean,
+  apiKeyHealth: ApiKeyHealth | undefined
+): SetupReadiness {
+  if (!apiKeyExists) {
+    return {
+      code: "missing_api_key",
+      ready: false,
+      label: "Not configured",
+      detail: "No Gemini API key is saved."
+    };
+  }
+
+  if (!privacyAccepted) {
+    return {
+      code: "privacy_not_accepted",
+      ready: false,
+      label: "Privacy needed",
+      detail: "Accept the privacy notice before FeedLens analyzes visible posts."
+    };
+  }
+
+  return {
+    code: "ready",
+    ready: true,
+    label: "Ready",
+    detail: apiKeyHealth
+      ? "Gemini analysis check passed."
+      : "Gemini key saved and privacy notice accepted."
   };
 }
 

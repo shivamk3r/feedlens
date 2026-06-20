@@ -1,14 +1,11 @@
 import { hydrateIcons } from "../shared/icons";
 import {
   clearApiKey,
-  getApiKeyHealth,
-  getSettings,
-  hasApiKey,
   saveApiKey,
   saveApiKeyHealth,
   saveSettings
 } from "../shared/storage";
-import type { ApiKeyHealth, ValidateApiKeyResponse } from "../shared/types";
+import type { SetupStatus, ValidateApiKeyResponse } from "../shared/types";
 import { escapeHtml, sendBackgroundMessage } from "../shared/ui";
 
 const root = document.querySelector<HTMLElement>("#feedlens-options-root");
@@ -17,6 +14,7 @@ interface OptionsViewState {
   notice?: string;
   noticeTone?: "info" | "error";
   apiHealth?: ApiHealthState;
+  status?: SetupStatus;
 }
 
 interface ApiHealthState {
@@ -32,12 +30,9 @@ async function render(state: OptionsViewState = {}): Promise<void> {
     return;
   }
 
-  const [settings, keyExists, savedHealth] = await Promise.all([
-    getSettings(),
-    hasApiKey(),
-    getApiKeyHealth()
-  ]);
-  const apiHealth = state.apiHealth ?? apiHealthFromStorage(keyExists, savedHealth);
+  const status =
+    state.status ?? (await sendBackgroundMessage<SetupStatus>({ type: "feedlens:getStatus" }));
+  const apiHealth = state.apiHealth ?? apiHealthFromStatus(status);
 
   root.innerHTML = `
     <header class="fl-topbar">
@@ -65,7 +60,7 @@ async function render(state: OptionsViewState = {}): Promise<void> {
             <div class="fl-help">Your key is stored in Chrome extension storage on this device and used only from your browser to call Gemini.</div>
           </div>
           <label class="fl-switch">
-            <input type="checkbox" name="privacyAccepted" ${checked(settings.privacyAccepted)} />
+            <input type="checkbox" name="privacyAccepted" ${checked(status.settings.privacyAccepted)} />
             <span>Visible posts on supported platforms may be sent directly from this browser to Gemini using my API key.</span>
           </label>
           <div class="fl-actions">
@@ -86,10 +81,10 @@ async function render(state: OptionsViewState = {}): Promise<void> {
   `;
 
   hydrateIcons(root);
-  bindOptions();
+  bindOptions(status);
 }
 
-function bindOptions(): void {
+function bindOptions(status: SetupStatus): void {
   const form = root?.querySelector<HTMLFormElement>("#feedlens-settings-form");
   form?.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -99,6 +94,7 @@ function bindOptions(): void {
 
     if (apiKey) {
       await render({
+        status,
         apiHealth: {
           marker: "yellow",
           label: "Checking",
@@ -109,6 +105,7 @@ function bindOptions(): void {
       const validation = await validateApiKey(apiKey);
       if (!validation.ok) {
         await render({
+          status,
           notice: "Gemini key was not saved.",
           noticeTone: "error",
           apiHealth: {
@@ -121,20 +118,14 @@ function bindOptions(): void {
       }
 
       await saveApiKey(apiKey);
-      const currentSettings = await getSettings();
       await saveApiKeyHealth({
         status: "valid",
         checkedAt: validation.checkedAt,
-        model: currentSettings.model
+        model: status.settings.model
       });
       await saveSettings({ privacyAccepted });
       await render({
-        notice: "Gemini key and privacy choice saved.",
-        apiHealth: {
-          marker: "green",
-          label: "Ready",
-          detail: "Gemini analysis check passed."
-        }
+        notice: "Gemini key and privacy choice saved."
       });
       return;
     }
@@ -146,12 +137,7 @@ function bindOptions(): void {
   root?.querySelector("#clear-key")?.addEventListener("click", async () => {
     await clearApiKey();
     await render({
-      notice: "Gemini API key cleared from extension storage.",
-      apiHealth: {
-        marker: "yellow",
-        label: "Not configured",
-        detail: "No Gemini API key is saved."
-      }
+      notice: "Gemini API key cleared from extension storage."
     });
   });
 }
@@ -184,30 +170,11 @@ function checked(value: boolean): string {
   return value ? "checked" : "";
 }
 
-function apiHealthFromStorage(
-  keyExists: boolean,
-  savedHealth: ApiKeyHealth | undefined
-): ApiHealthState {
-  if (!keyExists) {
-    return {
-      marker: "yellow",
-      label: "Not configured",
-      detail: "No Gemini API key is saved."
-    };
-  }
-
-  if (savedHealth) {
-    return {
-      marker: "green",
-      label: "Ready",
-      detail: "Gemini analysis check passed."
-    };
-  }
-
+function apiHealthFromStatus(status: SetupStatus): ApiHealthState {
   return {
-    marker: "yellow",
-    label: "Not checked",
-    detail: "Save a Gemini API key to run a live check."
+    marker: status.setup.ready ? "green" : "yellow",
+    label: status.setup.label,
+    detail: status.setup.detail
   };
 }
 
