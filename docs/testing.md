@@ -20,6 +20,20 @@ For changes to the development-only debug log page, also run:
 npm run build:dev
 ```
 
+For local browser debugging that needs the in-extension Debug logs page, generate `dist/` with:
+
+```sh
+npm run build:dev
+```
+
+For GitHub release packaging, rebuild `dist/` with:
+
+```sh
+npm run build
+```
+
+Never package or attach a debug-mode `dist/` to a GitHub release.
+
 Additional repository checks before committing or release:
 
 ```sh
@@ -39,9 +53,15 @@ The symlink check should continue to show tool adapters pointing at shared `.age
 CLAUDE.md -> AGENTS.md
 ```
 
+Before creating or uploading a GitHub release ZIP, confirm the production `dist/` does not contain debug-only assets:
+
+```sh
+test ! -e dist/debug.html && test ! -e dist/assets/debug.js
+```
+
 ## Manual Local Developer Beta Test
 
-1. Run `npm run build`.
+1. Run `npm run build:dev` for local browser debugging, or `npm run build` for release-like validation.
 2. Open `chrome://extensions`.
 3. Enable Developer mode.
 4. Load unpacked extension from `dist/`.

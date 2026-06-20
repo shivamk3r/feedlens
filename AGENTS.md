@@ -13,6 +13,12 @@ This repository builds **FeedLens**, a privacy-first Chrome extension for scorin
 - Do not compile or bundle any `.env` value into a distributable Chrome extension build.
 - Supported platform scope is LinkedIn plus X home and profile timelines. Do not add broad host permissions, additional platforms, X API support, or automated engagement unless explicitly requested later.
 
+## Build and Release Packaging
+
+- For agent-created local browser testing or debugging `dist/` output, use `npm run build:dev` so the dev-only debug log page is available.
+- For GitHub release assets, use `npm run build` and treat that production build as the only release-packaging source.
+- Never publish, upload, or attach a debug-mode `dist/` output to a GitHub release.
+
 ## First Reads for Agents
 
 Before any other changes, AI agents should read in this order:
