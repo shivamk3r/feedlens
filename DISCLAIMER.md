@@ -1,6 +1,6 @@
 # Disclaimer
 
-FeedLens is an open-source developer beta for local testing. It is not published on the Chrome Web Store and is not intended to imply production distribution readiness.
+FeedLens is an open-source Chrome extension. Chrome Web Store distribution is being prepared; until an official listing link is added to this repository, release ZIP and local build instructions are for unpacked-extension testing.
 
 ## No Affiliation
 
@@ -22,6 +22,6 @@ FeedLens outputs are model-based information-quality and manipulation-risk signa
 
 Users should treat FeedLens results as reading aids and should apply their own judgment before relying on any analysis.
 
-## Local Developer Beta
+## Distribution Status
 
-Installation instructions in this repository are for local developer testing with Chrome's unpacked-extension workflow. They are not a statement that the project is approved for Chrome Web Store distribution or approved by LinkedIn or X.
+Installation instructions in this repository may cover local unpacked-extension testing and future Chrome Web Store distribution. A local build, GitHub release ZIP, or Chrome Web Store listing does not mean that LinkedIn or X approves the extension.

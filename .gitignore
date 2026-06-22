@@ -6,6 +6,7 @@ node_modules/
 dist/
 coverage/
 output/
+release/
 .playwright-cli/
 .DS_Store
 *.log

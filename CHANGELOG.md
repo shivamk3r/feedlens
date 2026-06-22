@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased - Chrome Web Store Submission Prep
+
+### Changed
+
+- Prepared public privacy and disclaimer language for a Chrome Web Store launch-candidate flow.
+- Added Chrome Web Store submission materials covering listing copy, privacy declarations, permission justifications, test instructions, and packaging steps.
+
 ## v0.1.2 - X Timeline and Inline Lens Details
 
 FeedLens v0.1.2 expands the developer beta from LinkedIn-only coverage to visible LinkedIn and supported X timeline posts, while keeping the product Gemini-only, local-first, and packaged for GitHub release ZIP testing rather than Chrome Web Store distribution.

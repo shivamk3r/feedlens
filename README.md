@@ -1,14 +1,14 @@
 # FeedLens
 
-FeedLens is an open-source, privacy-first Chrome extension developer beta for surfacing information-quality and manipulation-risk signals on visible LinkedIn posts and X home/profile timeline posts.
+FeedLens is an open-source, privacy-first Chrome extension for surfacing information-quality and manipulation-risk signals on visible LinkedIn posts and X home/profile timeline posts.
 
 The MVP is Gemini-only. Users bring their own Gemini API key, and FeedLens does not run a backend server or store feed data on creator-controlled infrastructure.
 
 ## Current Status
 
-This repository contains a loadable Manifest V3 Chrome extension for local developer testing. FeedLens is not published on the Chrome Web Store and is not affiliated with, endorsed by, or approved by LinkedIn, X, Google, Gemini, Chrome, or the Chrome Web Store.
+This repository contains a loadable Manifest V3 Chrome extension. FeedLens is being prepared for Chrome Web Store distribution; until an official listing link is added here, use the release ZIP or local unpacked-extension workflow below. FeedLens is not affiliated with, endorsed by, or approved by LinkedIn, X, Google, Gemini, Chrome, or the Chrome Web Store.
 
-The current developer beta includes:
+The current version includes:
 
 - Platform adapters for visible-post detection, hashing, and inline markers on LinkedIn and supported X timelines.
 - Background service worker that owns Gemini calls and never exposes API keys to page scripts.
@@ -22,7 +22,13 @@ Before installing or using FeedLens, review the [privacy policy](PRIVACY.md) and
 
 ## Getting Started
 
-FeedLens release ZIPs are intended for local developer-beta testing with Chrome's unpacked-extension workflow. FeedLens is not distributed through the Chrome Web Store.
+### Chrome Web Store
+
+An official Chrome Web Store listing is being prepared. After approval, the listing link will be added here.
+
+### Release ZIP
+
+Until the Chrome Web Store listing is available, FeedLens release ZIPs can be installed with Chrome's unpacked-extension workflow.
 
 Install from a release ZIP:
 
@@ -84,6 +90,7 @@ For local test tooling only, copy `.env-example` to `.env` and set `GEMINI_API_K
 - [Product specification](docs/product-specification.md)
 - [Architecture](docs/architecture.md)
 - [Testing and release checklist](docs/testing.md)
+- [Chrome Web Store submission pack](docs/chrome-web-store-submission.md)
 - [Privacy policy](PRIVACY.md)
 - [Disclaimer](DISCLAIMER.md)
 - [MIT license](LICENSE)
